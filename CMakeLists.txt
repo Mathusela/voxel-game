@@ -8,4 +8,10 @@ set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/pdb")
 
 add_executable(voxel_game)
 
+find_package(glad CONFIG REQUIRED)
+target_link_libraries(voxel_game PRIVATE glad::glad)
+
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(voxel_game PRIVATE glfw)
+
 add_subdirectory(src)

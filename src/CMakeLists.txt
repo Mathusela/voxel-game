@@ -1,3 +1,3 @@
-target_sources(voxel_game PUBLIC
+target_sources(voxel_game PRIVATE
 	"main.cpp"
 )
