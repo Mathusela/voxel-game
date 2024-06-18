@@ -6,3 +6,4 @@ target_sources(modules PUBLIC
 add_subdirectory("utilities/")
 add_subdirectory("exceptions/")
 add_subdirectory("core/")
+add_subdirectory("typedefs/")

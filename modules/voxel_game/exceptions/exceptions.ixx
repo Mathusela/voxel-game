@@ -5,6 +5,8 @@ module;
 
 export module voxel_game.exceptions;
 
+export import :helpers;
+
 export namespace vxg::exceptions {
 
 	struct LoadError : public std::exception {

@@ -5,12 +5,12 @@ module;
 
 #include <utility>
 #include <string_view>
-#include <iostream>
 
 export module voxel_game.core:app;
 
 import voxel_game.exceptions;
 import voxel_game.utilities;
+import voxel_game.typedefs;
 
 export namespace vxg::core {
 
@@ -59,31 +59,23 @@ export namespace vxg::core {
 			}
 		}
 
-		using ExitCode = int;
-
-		template <typename T>
-		ExitCode handle_unrecoverable_error(const T& error) noexcept {
-			std::cerr << error.what() << "\n";
-			return EXIT_FAILURE;
-		}
-
 	public:
-		ExitCode run(const WindowProperties& windowProperties) noexcept {
+		vxg::ExitCode run(const WindowProperties& windowProperties) noexcept {
 			try { init_glfw(); }
 			catch (const vxg::exceptions::InitError& e)
-				{ return handle_unrecoverable_error(e); }
+				{ return vxg::exceptions::handle_unrecoverable_error(e); }
 			vxg::utilities::DeferredFunction deferredGLFWTerminate(glfwTerminate);
 
 			GLFWwindow* window;
 			try { window = create_window(windowProperties); }
 			catch (const vxg::exceptions::LoadError& e)
-				{ return handle_unrecoverable_error(e); }
+				{ return vxg::exceptions::handle_unrecoverable_error(e); }
 
 			// TODO: Add resizing callback
 
 			try { load_opengl(); }
 			catch (const vxg::exceptions::LoadError& e)
-				{ return handle_unrecoverable_error(e); }
+				{ return vxg::exceptions::handle_unrecoverable_error(e); }
 
 			glViewport(0, 0, windowProperties.resolution.first, windowProperties.resolution.second);
 
