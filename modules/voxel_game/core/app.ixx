@@ -14,19 +14,22 @@ import voxel_game.utilities;
 
 export namespace vxg::core {
 
-	// TODO: Go over all of this
 	class App {
+	public:
 		struct WindowProperties {
 			std::pair<int, int> resolution;
 			std::string_view title;
 		};
 
+	private:
 		GLFWwindow* create_window(const WindowProperties& properties) {
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 			GLFWwindow* window = glfwCreateWindow(properties.resolution.first, properties.resolution.second, properties.title.data(), nullptr, nullptr);
+			if (!window)
+				throw vxg::exceptions::InitError("Failed to initialize window.");
 
 			glfwMakeContextCurrent(window);
 
@@ -43,11 +46,11 @@ export namespace vxg::core {
 				throw vxg::exceptions::InitError("Failed to initialise GLFW.");
 		}
 
-		void set_opengl_rendering_state() {
+		void set_opengl_rendering_state() noexcept {
 			glClearColor(0.0, 0.0, 0.0, 1.0);
 		}
 
-		void render_loop(GLFWwindow* window) {
+		void do_render_loop(GLFWwindow* window) noexcept {
 			while (!glfwWindowShouldClose(window)) {
 				glClear(GL_COLOR_BUFFER_BIT);
 
@@ -56,31 +59,37 @@ export namespace vxg::core {
 			}
 		}
 
+		using ExitCode = int;
+
+		template <typename T>
+		ExitCode handle_unrecoverable_error(const T& error) noexcept {
+			std::cerr << error.what() << "\n";
+			return EXIT_FAILURE;
+		}
+
 	public:
-		int run() {
+		ExitCode run(const WindowProperties& windowProperties) noexcept {
 			try { init_glfw(); }
-			catch (const vxg::exceptions::InitError& e) {
-				std::cerr << e.what();
-				return EXIT_FAILURE;
-			}
+			catch (const vxg::exceptions::InitError& e)
+				{ return handle_unrecoverable_error(e); }
 			vxg::utilities::DeferredFunction deferredGLFWTerminate(glfwTerminate);
 
-			constexpr WindowProperties windowProperties{ {700, 500}, "Voxel Game" };
-			auto window = create_window(windowProperties);
+			GLFWwindow* window;
+			try { window = create_window(windowProperties); }
+			catch (const vxg::exceptions::LoadError& e)
+				{ return handle_unrecoverable_error(e); }
 
 			// TODO: Add resizing callback
 
 			try { load_opengl(); }
-			catch (const vxg::exceptions::LoadError& e) {
-				std::cerr << e.what();
-				return EXIT_FAILURE;
-			}
+			catch (const vxg::exceptions::LoadError& e)
+				{ return handle_unrecoverable_error(e); }
 
 			glViewport(0, 0, windowProperties.resolution.first, windowProperties.resolution.second);
 
 
 			set_opengl_rendering_state();
-			render_loop(window);
+			do_render_loop(window);
 
 			return EXIT_SUCCESS;
 		}
