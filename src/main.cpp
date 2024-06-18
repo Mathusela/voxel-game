@@ -3,111 +3,44 @@
 
 #include <utility>
 #include <string_view>
+#include <concepts>
+#include <tuple>
 
 #include <iostream>
 #include <functional>
 #include <type_traits>
 
-template <typename T>
-class ScopedResource {
-	std::function<void(std::remove_reference_t<T>&)> m_destructor;
-	T m_resource;
+template <typename Function, typename... Args>
+	requires std::invocable<Function, Args&&...>
+class DeferredFunction {
+	const Function m_function;
+	const std::tuple<Args...> m_args;
 
 public:
-	// Construct with constructor function
-	template <typename Destructor>
-	ScopedResource(std::function<std::remove_reference_t<T>()> constructor, Destructor destructor):
-		m_destructor(destructor)
-	{
-		static_assert(std::is_nothrow_invocable_v<Destructor, std::remove_reference_t<T>&>);
-		m_resource = constructor();
-	}
-
-	// Construct by capturing resource
-	template <typename Destructor>
-	ScopedResource(T&& resource, Destructor destructor) noexcept :
-		m_resource(std::move(resource)), m_destructor(destructor)
-	{
-		static_assert(std::is_nothrow_invocable_v<Destructor, std::remove_reference_t<T>&>);
-	}
+	// Main constructor
+	template <typename... CtorArgs>
+	constexpr DeferredFunction(Function function, CtorArgs&&... args) noexcept
+		: m_function(std::forward<Function>(function)), m_args(std::forward<CtorArgs>(args)...) {}
 
 	// Copy constructor
-	ScopedResource(const ScopedResource& sr) noexcept {
-		m_resource = sr.m_resource;
-		m_destructor = sr.m_destructor;
-	}
+	DeferredFunction(const DeferredFunction& df) = delete;
 
 	// Copy assignment
-	ScopedResource& operator=(const ScopedResource& sr) noexcept {
-		m_destructor(m_resource);
-		m_resource = sr.m_resource;
-		m_destructor = sr.m_destructor;
-		return *this;
-	}
+	DeferredFunction& operator=(const DeferredFunction& df) = delete;
 
 	// Move constructor
-	ScopedResource(ScopedResource&& sr) noexcept {
-		m_resource = std::move(sr.m_resource);
-		m_destructor = std::move(sr.m_destructor);
-		sr.m_destructor = nullptr;
-	}
+	DeferredFunction(DeferredFunction&& df) = delete;
 
 	// Move assignment
-	ScopedResource& operator=(ScopedResource&& sr) {
-		m_destructor(m_resource);
-		m_resource = std::move(sr.m_resource);
-		m_destructor = std::move(sr.m_destructor);
-		sr.m_destructor = nullptr;
-		return *this;
-	}
-
-	~ScopedResource() noexcept {
-		if (m_destructor != nullptr) m_destructor(m_resource);
-	}
-
-	T& get() noexcept {
-		return m_resource;
+	DeferredFunction& operator=(DeferredFunction&& df) = delete;
+	
+	~DeferredFunction() noexcept(std::is_nothrow_invocable_v<Function, Args&&...>) {
+		std::apply(m_function, m_args);
 	}
 };
 
-template <>
-class ScopedResource<void> {
-	std::function<void()> m_destructor;
-
-public:
-	// Construct with constructor function
-	template <typename Destructor>
-	ScopedResource(std::function<void()> constructor, Destructor destructor) :
-		m_destructor(destructor)
-	{
-		static_assert(std::is_nothrow_invocable_v<Destructor>);
-		constructor();
-	}
-
-	// Construct only passing destructor
-	template <typename Destructor>
-	ScopedResource(Destructor destructor) noexcept :
-		m_destructor(destructor)
-	{
-		static_assert(std::is_nothrow_invocable_v<Destructor>);
-	}
-
-	// Copy constructor
-	ScopedResource(const ScopedResource& sr) noexcept = delete;
-
-	// Copy assignment
-	ScopedResource& operator=(const ScopedResource& sr) noexcept = delete;
-
-	// Move constructor
-	ScopedResource(ScopedResource&& sr) noexcept = delete;
-
-	// Move assignment
-	ScopedResource& operator=(ScopedResource&& sr) = delete;
-
-	~ScopedResource() noexcept {
-		m_destructor();
-	}
-};
+template<typename Function, typename... CtorArgs>
+DeferredFunction(Function, CtorArgs&&...) -> DeferredFunction<Function, CtorArgs...>;
 
 struct LoadError : public std::exception {
 	LoadError(std::string_view message) : std::exception(message.data()) {}
@@ -163,7 +96,7 @@ int main() {
 		std::cerr << e.what();
 		return EXIT_FAILURE;
 	}
-	ScopedResource<void> deferredGLFWInstanceTermination(glfwTerminate);
+	DeferredFunction deferredGLFWTerminate(glfwTerminate);
 	
 	constexpr WindowProperties windowProperties {{700, 500}, "Voxel Game"};
 	auto window = create_window(windowProperties);
