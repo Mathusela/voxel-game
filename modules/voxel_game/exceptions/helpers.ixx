@@ -9,6 +9,7 @@ import voxel_game.typedefs;
 export namespace vxg::exceptions {
 
 	template <typename T>
+	[[nodiscard]]
 	vxg::ExitCode handle_unrecoverable_error(const T& error) noexcept {
 		std::cerr << error.what() << "\n";
 		return EXIT_FAILURE;
