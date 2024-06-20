@@ -28,7 +28,7 @@ int main() {
 	
 	// Choose rendering backend
 	vxg::core::rendering::OpenGLBackend rendering_backend;
-
+	
 	// Run application
 	vxg::core::App app(std::move(rendering_backend));
 	return app.run(window);

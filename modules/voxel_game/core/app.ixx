@@ -19,7 +19,7 @@ export namespace vxg::core {
 
 	template <typename Backend>
 	class App {
-		Backend m_backend;
+		vxg::core::rendering::RenderingBackend<Backend> m_backend;
 
 		void load_opengl() {
 			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
@@ -40,7 +40,7 @@ export namespace vxg::core {
 		}
 
 	public:
-		App(Backend&& backend) noexcept
+		App(vxg::core::rendering::RenderingBackend<Backend>&& backend) noexcept
 			: m_backend(std::move(backend)) {}
 
 		vxg::ExitCode run(const vxg::core::WindowManager& window) noexcept {
