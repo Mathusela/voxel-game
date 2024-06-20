@@ -19,14 +19,14 @@ export namespace vxg::core::rendering {
 	};
 
 	struct WindowProperties {
-		std::pair<int, int> resolution;
+		std::pair<unsigned int, unsigned int> resolution;
 		std::string_view title;
 		vxg::core::rendering::APIVersion version;
 	};
 
 	class WindowManager {
 		GLFWwindow* m_handle;
-		std::pair<int, int> m_resolution;
+		std::pair<unsigned int, unsigned int> m_resolution;
 		std::string m_title;
 
 	public:
@@ -99,7 +99,7 @@ export namespace vxg::core::rendering {
 		}
 
 		[[nodiscard]]
-		std::pair<int, int> resolution() const noexcept {
+		std::pair<unsigned int, unsigned int> resolution() const noexcept {
 			return m_resolution;
 		}
 	};

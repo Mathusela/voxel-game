@@ -49,8 +49,7 @@ export namespace vxg::core {
 			catch (const vxg::exceptions::LoadError& e)
 				{ return vxg::exceptions::handle_unrecoverable_error(e); }
 
-			// Offload to rendering
-			glViewport(0, 0, window.resolution().first, window.resolution().second);
+			m_backend.configure_viewport(0, 0, window.resolution().first, window.resolution().second);
 
 			set_rendering_state();
 			do_render_loop(window);

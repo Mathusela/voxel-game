@@ -1,10 +1,10 @@
 module;
 
-#include <memory>
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+
+#include <memory>
 
 export module voxel_game.core.rendering:rendering_backend;
 
@@ -90,6 +90,12 @@ export namespace vxg::core::rendering {
 		{
 			clear_screen();
 		}
+
+		void configure_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
+			noexcept(noexcept(derived_instance()->configure_viewport_impl(x, y, width, height)))
+		{
+			derived_instance()->configure_viewport_impl(x, y, width, height);
+		}
 	};
 
 	class OpenGLBackend final : public RenderingBackend<OpenGLBackend> {
@@ -116,6 +122,10 @@ export namespace vxg::core::rendering {
 
 		void set_clear_color_impl(const glm::vec4& color) noexcept {
 			glClearColor(color.r, color.g, color.b, color.a);
+		}
+
+		void configure_viewport_impl(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+			glViewport(x, y, width, height);
 		}
 	
 	public:
