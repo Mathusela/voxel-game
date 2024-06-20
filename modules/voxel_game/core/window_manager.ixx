@@ -19,14 +19,12 @@ export namespace vxg::core {
 		int8_t minor;
 	};
 
-	struct WindowManager {
-	private:
+	class WindowManager {
 		GLFWwindow* m_handle;
 		std::pair<int, int> m_resolution;
 		std::string m_title;
 
 	public:
-		
 		void make_current() const noexcept {
 			glfwMakeContextCurrent(m_handle);
 		}

@@ -4,3 +4,5 @@ target_sources(modules PUBLIC
 	"app.ixx"
 	"window_manager.ixx"
 )
+
+add_subdirectory("rendering/")

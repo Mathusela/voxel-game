@@ -2,6 +2,7 @@ module;
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <utility>
 #include <string_view>
@@ -9,25 +10,29 @@ module;
 export module voxel_game.core:app;
 
 import :window_manager;
+import voxel_game.core.rendering;
 import voxel_game.exceptions;
 import voxel_game.utilities;
 import voxel_game.typedefs;
 
 export namespace vxg::core {
 
+	template <typename Backend>
 	class App {
+		Backend m_backend;
+
 		void load_opengl() {
 			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
 		}
 
-		void set_opengl_rendering_state() noexcept {
-			glClearColor(0.0, 0.0, 0.0, 1.0);
+		void set_rendering_state() noexcept {
+			m_backend.set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
 		}
 
-		void do_render_loop(const WindowManager& window) noexcept {
+		void do_render_loop(const vxg::core::WindowManager& window) noexcept {
 			while (!glfwWindowShouldClose(window.get())) {
-				glClear(GL_COLOR_BUFFER_BIT);
+				m_backend.clear_screen();
 
 				glfwSwapBuffers(window.get());
 				glfwPollEvents();
@@ -35,16 +40,20 @@ export namespace vxg::core {
 		}
 
 	public:
-		vxg::ExitCode run(const WindowManager& window) noexcept {
+		App(Backend&& backend) noexcept
+			: m_backend(std::move(backend)) {}
+
+		vxg::ExitCode run(const vxg::core::WindowManager& window) noexcept {
 			// TODO: Add resizing callback
 
-			try { load_opengl(); }
+			try { m_backend.initialize(); }
 			catch (const vxg::exceptions::LoadError& e)
 				{ return vxg::exceptions::handle_unrecoverable_error(e); }
 
+			// Offload to rendering
 			glViewport(0, 0, window.resolution().first, window.resolution().second);
 
-			set_opengl_rendering_state();
+			set_rendering_state();
 			do_render_loop(window);
 
 			return EXIT_SUCCESS;
