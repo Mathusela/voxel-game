@@ -20,11 +20,6 @@ export namespace vxg::core {
 	class App {
 		vxg::core::rendering::RenderingBackend<Backend> m_backend;
 
-		void load_opengl() {
-			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
-		}
-
 		void set_rendering_state() noexcept {
 			m_backend.set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
 		}
