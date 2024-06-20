@@ -96,7 +96,7 @@ export namespace vxg::core::rendering {
 		using Base = RenderingBackend<OpenGLBackend>;
 		friend Base;
 
-		// Depends on glfw being initialized
+		// Depends on a current window context
 		void initialize_impl() {
 			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
