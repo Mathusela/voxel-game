@@ -1,6 +1,6 @@
 module;
 
-#include <iostream>
+#include <memory>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,6 +8,7 @@ module;
 
 export module voxel_game.core.rendering:rendering_backend;
 
+import :window_manager;
 import voxel_game.exceptions;
 
 export namespace vxg::core::rendering {
@@ -16,7 +17,10 @@ export namespace vxg::core::rendering {
 	class RenderingBackend {
 		bool m_terminated = false;
 		
-		RenderingBackend() noexcept {}
+		RenderingBackend() {
+			if (!glfwInit())
+				throw vxg::exceptions::InitError("Failed to initialise GLFW.");
+		}
 		friend Derived;
 
 
@@ -63,6 +67,12 @@ export namespace vxg::core::rendering {
 			derived_instance()->initialize_impl();
 		}
 
+		std::unique_ptr<WindowManager> construct_window(const vxg::core::rendering::WindowProperties& properties) const
+			noexcept(noexcept(derived_instance()->construct_window_impl(properties)))
+		{
+			return derived_instance()->construct_window_impl(properties);
+		}
+
 		void clear_screen() const
 			noexcept(noexcept(derived_instance()->clear_screen_impl()))
 		{
@@ -86,6 +96,20 @@ export namespace vxg::core::rendering {
 		using Base = RenderingBackend<OpenGLBackend>;
 		friend Base;
 
+		// Depends on glfw being initialized
+		void initialize_impl() {
+			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
+		}
+
+		void terminate_impl() noexcept {
+			glfwTerminate();
+		}
+		
+		std::unique_ptr<WindowManager> construct_window_impl(const vxg::core::rendering::WindowProperties& properties) const {
+			return std::make_unique<vxg::core::rendering::WindowManager>(properties);
+		}
+
 		void clear_screen_impl() const noexcept {
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
@@ -93,14 +117,9 @@ export namespace vxg::core::rendering {
 		void set_clear_color_impl(const glm::vec4& color) noexcept {
 			glClearColor(color.r, color.g, color.b, color.a);
 		}
-
-		// Depends on glfw being initialized
-		void initialize_impl() {
-			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
-		}
-
-		void terminate_impl() noexcept {}
+	
+	public:
+		OpenGLBackend() : Base() {}
 	};
 
 }; // namespace vxg::core::rendering

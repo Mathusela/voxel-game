@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include <type_traits>
+#include <memory>
 
 import voxel_game.core;
 import voxel_game.exceptions;
@@ -13,23 +14,17 @@ void init_glfw() {
 }
 
 int main() {
-	// Initialize glfw
-	try { init_glfw(); }
-	catch (const vxg::exceptions::InitError& e)
-		{ return vxg::exceptions::handle_unrecoverable_error(e); }
-	vxg::utilities::DeferredFunction deferredGLFWTerminate(glfwTerminate);
+	try {
+		// Choose rendering backend
+		vxg::core::rendering::OpenGLBackend rendering_backend;
 
-	// TODO: Offload window creation to rendering backend
-	// Create window
-	vxg::core::WindowManager window;
-	try { window = vxg::core::WindowManager({700, 500}, "Voxel Game", {4, 6}); }
+		// Create window
+		std::unique_ptr<vxg::core::rendering::WindowManager> window = rendering_backend.construct_window({ {700, 500}, "Voxel Game", {4, 6} });
+
+		// Run application
+		vxg::core::App app(std::move(rendering_backend));
+		return app.run(*window);
+	}
 	catch (const vxg::exceptions::InitError& e)
 		{ return vxg::exceptions::handle_unrecoverable_error(e); }
-	
-	// Choose rendering backend
-	vxg::core::rendering::OpenGLBackend rendering_backend;
-	
-	// Run application
-	vxg::core::App app(std::move(rendering_backend));
-	return app.run(window);
 }

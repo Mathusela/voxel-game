@@ -3,20 +3,25 @@ module;
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <cstdint>
 #include <utility>
 #include <string_view>
 #include <string>
 
-export module voxel_game.core:window_manager;
+export module voxel_game.core.rendering:window_manager;
 
 import voxel_game.exceptions;
 
-export namespace vxg::core {
+export namespace vxg::core::rendering {
 
 	struct APIVersion {
 		int8_t major;
 		int8_t minor;
+	};
+
+	struct WindowProperties {
+		std::pair<int, int> resolution;
+		std::string_view title;
+		vxg::core::rendering::APIVersion version;
 	};
 
 	class WindowManager {
@@ -29,14 +34,14 @@ export namespace vxg::core {
 			glfwMakeContextCurrent(m_handle);
 		}
 
-		WindowManager(std::pair<int, int> resolution, const std::string_view title, [[maybe_unused]] APIVersion version)
-			: m_handle(nullptr), m_resolution(resolution), m_title(title)
+		WindowManager(const WindowProperties& properties)
+			: m_handle(nullptr), m_resolution(properties.resolution), m_title(properties.title)
 		{
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, version.major);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, version.minor);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, properties.version.major);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, properties.version.minor);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-			GLFWwindow* window = glfwCreateWindow(resolution.first, resolution.second, m_title.c_str(), nullptr, nullptr);
+			GLFWwindow* window = glfwCreateWindow(properties.resolution.first, properties.resolution.second, m_title.c_str(), nullptr, nullptr);
 			if (!window)
 				throw vxg::exceptions::InitError("Failed to initialize window.");
 
