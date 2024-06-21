@@ -1,29 +1,29 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <type_traits>
-#include <memory>
-#include <iostream>
+#include <utility>
+#include <exception>
 
 import voxel_game.core;
 import voxel_game.exceptions;
 import voxel_game.utilities;
 
 int main() {
-	// Choose rendering backend
-	auto renderingBackendConstruction = vxg::exceptions::construct_and_catch
-		<vxg::core::rendering::OpenGLBackend, vxg::exceptions::InitError>(vxg::exceptions::handle_unrecoverable_error<vxg::exceptions::InitError>);
-	if (renderingBackendConstruction.encounteredException)
-		return renderingBackendConstruction.get_error_result();
-	vxg::core::rendering::OpenGLBackend renderingBackend = std::move(renderingBackendConstruction.get_instance());
+	// Construct rendering context
+	using Backend = vxg::core::rendering::OpenGLBackend;
+	using Context = vxg::core::rendering::RenderingContext<Backend>;
 
-	// Create window
-	std::unique_ptr<vxg::core::rendering::WindowManager> window;
-	try { window = renderingBackend.construct_window({ {700, 500}, "Voxel Game", {4, 6} }); }
-	catch (const vxg::exceptions::InitError& e)
-		{ return vxg::exceptions::handle_unrecoverable_error(e); }
+	auto contextConstructionResult = vxg::exceptions::construct_and_catch<Context, std::exception>(
+		vxg::exceptions::handle_unrecoverable_error<std::exception>,
+		vxg::core::rendering::WindowProperties { {700, 500}, "Voxel Game", {4, 6} }
+	);
+
+	// Handle errors
+	if (contextConstructionResult.encounteredException)
+		return contextConstructionResult.get_error_result();
+	Context renderingContext = std::move(contextConstructionResult.get_instance());
 
 	// Run application
-	vxg::core::App app(std::move(renderingBackend));
-	return app.run(*window);
+	vxg::core::App app(std::move(renderingContext));
+	return app.run();
 }

@@ -59,12 +59,14 @@ export namespace vxg::core::rendering {
 		}
 
 		// Move assignment
-		RenderingBackend& operator=(RenderingBackend&& rb) = delete;
+		RenderingBackend& operator=(RenderingBackend&& rb) noexcept {
+			rb.m_terminated = true;
+		};
 
-		void initialize()
-			noexcept(noexcept(derived_instance()->initialize_impl()))
+		void initialize_api()
+			noexcept(noexcept(derived_instance()->initialize_api_impl()))
 		{
-			derived_instance()->initialize_impl();
+			derived_instance()->initialize_api_impl();
 		}
 
 		std::unique_ptr<WindowManager> construct_window(const vxg::core::rendering::WindowProperties& properties) const
@@ -103,7 +105,7 @@ export namespace vxg::core::rendering {
 		friend Base;
 
 		// Depends on a current window context
-		void initialize_impl() {
+		void initialize_api_impl() {
 			if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 				throw vxg::exceptions::LoadError("Failed to load OpenGL symbols.");
 		}

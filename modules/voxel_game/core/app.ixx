@@ -5,7 +5,6 @@ module;
 #include <glm/glm.hpp>
 
 #include <utility>
-#include <string_view>
 
 export module voxel_game.core:app;
 
@@ -18,36 +17,27 @@ export namespace vxg::core {
 
 	template <typename Backend>
 	class App {
-		vxg::core::rendering::RenderingBackend<Backend> m_backend;
+		vxg::core::rendering::RenderingContext<Backend> m_renderingContext;
 
 		void set_rendering_state() noexcept {
-			m_backend.set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
+			m_renderingContext.backend().set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
 		}
 
-		void do_render_loop(const vxg::core::rendering::WindowManager& window) noexcept {
-			while (!glfwWindowShouldClose(window.get())) {
-				m_backend.clear_screen();
-
-				glfwSwapBuffers(window.get());
-				glfwPollEvents();
+		void do_render_loop() noexcept {
+			// TODO: Refactor window should close to window manager
+			while (!glfwWindowShouldClose(m_renderingContext.window().get())) {
+				m_renderingContext.render_scene();
 			}
 		}
 
 	public:
-		App(vxg::core::rendering::RenderingBackend<Backend>&& backend) noexcept
-			: m_backend(std::move(backend)) {}
+		App(vxg::core::rendering::RenderingContext<Backend>&& renderingContext) noexcept
+			: m_renderingContext(std::move(renderingContext)) {}
 
-		vxg::ExitCode run(const vxg::core::rendering::WindowManager& window) noexcept {
+		vxg::ExitCode run() noexcept {
 			// TODO: Add resizing callback
-
-			try { m_backend.initialize(); }
-			catch (const vxg::exceptions::LoadError& e)
-				{ return vxg::exceptions::handle_unrecoverable_error(e); }
-
-			m_backend.configure_viewport(0, 0, window.resolution().first, window.resolution().second);
-
 			set_rendering_state();
-			do_render_loop(window);
+			do_render_loop();
 
 			return EXIT_SUCCESS;
 		}
