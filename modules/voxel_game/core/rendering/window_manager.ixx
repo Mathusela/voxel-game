@@ -93,6 +93,14 @@ export namespace vxg::core::rendering {
 			return m_handle;
 		}
 
+		void swap_buffers() noexcept {
+			glfwSwapBuffers(m_handle);
+		}
+
+		void poll_events() const noexcept {
+			glfwPollEvents();
+		}
+
 		[[nodiscard]]
 		std::string title() const noexcept {
 			return m_title;

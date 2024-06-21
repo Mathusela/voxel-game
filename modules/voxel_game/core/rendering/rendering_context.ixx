@@ -1,8 +1,5 @@
 module;
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #include <memory>
 #include <utility>
 
@@ -44,10 +41,12 @@ export namespace vxg::core::rendering {
 			m_window = std::move(rc.m_window);
 		}
 
+		[[nodiscard]]
 		vxg::core::rendering::WindowManager& window() noexcept {
 			return *m_window;
 		}
 
+		[[nodiscard]]
 		vxg::core::rendering::RenderingBackend<Backend>& backend() noexcept {
 			return m_backend;
 		}
@@ -57,9 +56,8 @@ export namespace vxg::core::rendering {
 		{
 			m_backend.clear_screen();
 
-			// TODO: Refactor to backend
-			glfwSwapBuffers(m_window->get());
-			glfwPollEvents();
+			m_window->swap_buffers();
+			m_window->poll_events();
 		}
 	};
 
