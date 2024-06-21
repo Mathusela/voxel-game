@@ -102,6 +102,11 @@ export namespace vxg::core::rendering {
 		std::pair<unsigned int, unsigned int> resolution() const noexcept {
 			return m_resolution;
 		}
+
+		[[nodiscard]]
+		bool should_close() const noexcept {
+			return glfwWindowShouldClose(m_handle);
+		}
 	};
 
 };	// namespace vxg::core

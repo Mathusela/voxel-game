@@ -24,8 +24,7 @@ export namespace vxg::core {
 		}
 
 		void do_render_loop() noexcept {
-			// TODO: Refactor window should close to window manager
-			while (!glfwWindowShouldClose(m_renderingContext.window().get())) {
+			while (!m_renderingContext.window().should_close()) {
 				m_renderingContext.render_scene();
 			}
 		}
