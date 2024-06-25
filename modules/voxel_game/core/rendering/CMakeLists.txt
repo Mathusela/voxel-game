@@ -4,4 +4,5 @@ target_sources(modules PUBLIC
 	"rendering_backend.ixx"
 	"rendering_context.ixx"
 	"window_manager.ixx"
+	"structs.ixx"
 )

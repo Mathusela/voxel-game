@@ -20,6 +20,10 @@ endif()
 # Modules
 add_library(modules OBJECT)
 
+# Include
+target_include_directories(modules PUBLIC "include/")
+
+# Libraries
 find_package(glad CONFIG REQUIRED)
 target_link_libraries(modules PUBLIC glad::glad)
 

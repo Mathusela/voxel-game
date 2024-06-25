@@ -1,5 +1,7 @@
 module;
 
+#include "voxel_game/debug_macros.hpp"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -40,6 +42,10 @@ export namespace vxg::core::rendering {
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, properties.version.major);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, properties.version.minor);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+			#ifdef DEBUG
+			glfwWindowHint(GLFW_CONTEXT_DEBUG, true);			
+			#endif // DEBUG
 
 			GLFWwindow* window = glfwCreateWindow(properties.resolution.first, properties.resolution.second, m_title.c_str(), nullptr, nullptr);
 			if (!window)

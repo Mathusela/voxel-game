@@ -21,9 +21,10 @@ export namespace vxg::core {
 			m_renderingContext.backend().set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
 		}
 
-		void do_render_loop() noexcept {
+		void render_loop() noexcept {
 			while (!m_renderingContext.window().should_close()) {
-				m_renderingContext.render_scene();
+				m_renderingContext.enqueue_draw_tri();
+				m_renderingContext.draw_and_present();
 			}
 		}
 
@@ -34,7 +35,7 @@ export namespace vxg::core {
 		vxg::ExitCode run() noexcept {
 			// TODO: Add resizing callback
 			set_rendering_state();
-			do_render_loop();
+			render_loop();
 
 			return EXIT_SUCCESS;
 		}
