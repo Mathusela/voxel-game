@@ -23,7 +23,6 @@ export namespace vxg::core {
 
 		void render_loop() noexcept {
 			while (!m_renderingContext.window().should_close()) {
-				m_renderingContext.enqueue_draw_tri();
 				m_renderingContext.draw_and_present();
 			}
 		}
@@ -35,6 +34,11 @@ export namespace vxg::core {
 		vxg::ExitCode run() noexcept {
 			// TODO: Add resizing callback
 			set_rendering_state();
+
+			auto test = m_renderingContext.enqueue_draw_tri();
+			auto tri = m_renderingContext.enqueue_draw_tri();
+			m_renderingContext.dequeue_draw(test);
+
 			render_loop();
 
 			return EXIT_SUCCESS;

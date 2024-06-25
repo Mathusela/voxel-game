@@ -1,7 +1,10 @@
 {
   "name": "voxel-game",
   "dependencies": [
-    "glad",
+    {
+      "name": "glad",
+      "features": ["gl-api-46"]
+    },
     "glfw3",
     "glm"
   ],

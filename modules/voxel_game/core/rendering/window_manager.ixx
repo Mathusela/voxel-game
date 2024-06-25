@@ -54,6 +54,7 @@ export namespace vxg::core::rendering {
 			m_handle = window;
 
 			make_current();
+			glfwSwapInterval(0);
 		}
 
 		WindowManager() noexcept
