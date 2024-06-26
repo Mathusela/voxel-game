@@ -120,11 +120,125 @@ struct MemoryPool {
 	GLuint vbo;
 	GLuint drawCommandBuffer;
 
+	uint16_t index;
 	GLsizei queuedDrawsCount = 0;
+	GLsizeiptr dataBufferSize = 0;
 	uint_fast32_t freeDataMemorySize;
 	std::set<DrawCommandRegion> freeDrawMemory;
 };
 
+void resize_buffer(GLuint buffer, GLsizeiptr newSize) {
+	// Get current size of buffer and usage hint for the data
+	GLint oldSize;
+	glGetNamedBufferParameteriv(buffer, GL_BUFFER_SIZE, &oldSize);
+	GLint usageHint;
+	glGetNamedBufferParameteriv(buffer, GL_BUFFER_USAGE, &usageHint);
+
+	// Create a temporary buffer in order to hold data while resizing buffer
+	GLuint tempBuffer;
+	glCreateBuffers(1, &tempBuffer);
+	vxg::utilities::DeferredFunction<decltype(glDeleteBuffers), GLsizei, GLuint*> deferredDeleteTempBuffer(glDeleteBuffers, 1, &tempBuffer);
+	glNamedBufferData(tempBuffer, oldSize, nullptr, GL_STATIC_COPY);
+
+	// Copy contents of buffer to temporary buffer
+	glCopyNamedBufferSubData(buffer, tempBuffer, 0, 0, oldSize);
+
+	// Resize buffer
+	glNamedBufferData(buffer, newSize, nullptr, usageHint);
+
+	// Copy data from temporary buffer back into the resized buffer
+	GLsizeiptr copySize = std::min(newSize, static_cast<GLsizeiptr>(oldSize));
+	glCopyNamedBufferSubData(tempBuffer, buffer, 0, 0, copySize);
+}
+
+template <typename Block> Block merge_with_surrounding_blocks(const Block& block, std::set<Block>& freeList);
+template <>
+vxg::core::rendering::GPUAllocationIdentifier merge_with_surrounding_blocks<vxg::core::rendering::GPUAllocationIdentifier>(const vxg::core::rendering::GPUAllocationIdentifier& block, std::set<vxg::core::rendering::GPUAllocationIdentifier>& freeList) {
+	using Block = vxg::core::rendering::GPUAllocationIdentifier;
+	
+	if (freeList.size() == 0)
+		return block;
+
+	Block merged = block;
+
+	// Merge data with surrounding free blocks
+	auto bound = freeList.upper_bound(block);	// First element at a memory location greater than the block
+	bool validBound = bound != freeList.end();
+
+	// Greater block
+	if (validBound) {
+		auto upperBound = bound;	// Copy for use in merge
+		bound--;	// Decrement for lesser block - do this now as we may erase lowerBound invalidating the iterator if we do not increment
+
+		if (upperBound->memoryPoolIndex == block.memoryPoolIndex && upperBound->bufferOffset == block.bufferOffset + block.vertexCount * sizeof(vxg::core::rendering::Vertex)) {
+			// Merge
+			merged.vertexCount += upperBound->vertexCount;
+
+			// Remove merged block
+			freeList.erase(upperBound);
+		}
+	}
+	else {
+		bound = std::prev(freeList.end());	// There was no greater block, the lesser block must be the last in the set
+	}
+
+	// Lesser block
+	validBound = bound != freeList.end();
+	if (validBound) {
+		if (bound->memoryPoolIndex == block.memoryPoolIndex && bound->bufferOffset + bound->vertexCount * sizeof(vxg::core::rendering::Vertex) == block.bufferOffset) {
+			// Merge
+			merged.bufferOffset = bound->bufferOffset;
+			merged.vertexCount += bound->vertexCount;
+
+			// Remove merged block
+			freeList.erase(bound);
+		}
+	}
+
+	return merged;
+}
+template <>
+DrawCommandRegion merge_with_surrounding_blocks<DrawCommandRegion>(const DrawCommandRegion& block, std::set<DrawCommandRegion>& freeList) {
+	using Block = DrawCommandRegion;
+	
+	Block merged = block;
+
+	// Merge data with surrounding free blocks
+	auto bound = freeList.upper_bound(merged);	// First element at a memory location greater than the block
+	bool validBound = bound != freeList.end();
+
+	// Greater block
+	if (validBound) {
+		auto upperBound = bound;	// Copy for use in merge
+		bound--;	// Decrement for lesser block - do this now as we may erase lowerBound invalidating the iterator if we do not increment
+
+		if (upperBound->bufferIndex == block.bufferIndex + 1) {
+			// Merge
+			merged.size += upperBound->size;
+
+			// Remove merged block
+			freeList.erase(upperBound);
+		}
+	}
+	else {
+		bound = std::prev(freeList.end());	// There was no greater block, the lesser block must be the last in the set
+	}
+
+	// Lesser block
+	validBound = bound != freeList.end();
+	if (validBound) {
+		if (bound->bufferIndex + bound->size == block.bufferIndex) {
+			// Merge
+			merged.bufferIndex = bound->bufferIndex;
+			merged.size += bound->size;
+
+			// Remove merged block
+			freeList.erase(bound);
+		}
+	}
+
+	return merged;
+}
 
 export namespace vxg::core::rendering {
 
@@ -162,14 +276,17 @@ export namespace vxg::core::rendering {
 
 			// Initialize OpenGL resources
 			// Memory pools
-			for (int i = 0; i < m_numMemoryPools; i++) {
+			for (uint16_t i = 0; i < m_numMemoryPools; i++) {
 				m_memoryPools.push_back({});
 				auto& memPool = m_memoryPools.back();
+				memPool.index = i;
+
 				glCreateVertexArrays(1, &memPool.vao);
 				glCreateBuffers(1, &memPool.vbo);
-				glNamedBufferData(memPool.vbo, m_dataBufferInitialSize, nullptr, GL_DYNAMIC_DRAW);
+				glNamedBufferData(memPool.vbo, m_dataBufferInitialSize, nullptr, GL_DYNAMIC_READ);
 				glCreateBuffers(1, &memPool.drawCommandBuffer);
-				glNamedBufferData(memPool.drawCommandBuffer, m_drawBufferInitialSize, nullptr, GL_DYNAMIC_DRAW);
+				glNamedBufferData(memPool.drawCommandBuffer, m_drawBufferInitialSize, nullptr, GL_DYNAMIC_READ);
+				memPool.dataBufferSize = m_dataBufferInitialSize;
 
 				// Free memory
 				memPool.freeDataMemorySize = m_dataBufferInitialSize;
@@ -216,7 +333,6 @@ export namespace vxg::core::rendering {
 
 			auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
 			auto fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-			//                               vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv This just fixes intelisense
 			vxg::utilities::DeferredFunction<decltype(glDeleteShader), GLuint> deferredVertexShaderDelete(glDeleteShader, vertexShader);
 			vxg::utilities::DeferredFunction<decltype(glDeleteShader), GLuint> deferredFragmentShaderDelete(glDeleteShader, fragmentShader);
 
@@ -263,6 +379,9 @@ export namespace vxg::core::rendering {
 			// Get free memory
 			auto numVerts = verts.size();
 
+			if (m_freeDataMemory.empty()) {
+				std::cout << "EMPTY\n";
+			}
 			// Get the smallest chunk that can contain the data preferring sparse buffers
 			auto validChunks = m_freeDataMemory
 				| std::views::filter([numVerts](const GPUAllocationIdentifier& mem) {return numVerts <= mem.vertexCount; });
@@ -276,14 +395,37 @@ export namespace vxg::core::rendering {
 			GPUAllocationIdentifier free;
 			if (freeIt != validChunks.end()) {
 				free = *freeIt;
+				// Remove memory from the free list to allocate it
+				m_freeDataMemory.erase(freeIt.base());
 			}
 			else {
-				// Resize
-				free = {};
-			}
+				// Resize the smallest VBO
+				auto smallestMemPoolIt = std::ranges::min_element(m_memoryPools, [](const MemoryPool& left, const MemoryPool& right) {
+					return left.dataBufferSize < right.dataBufferSize;
+				});
+				auto bufferSize = smallestMemPoolIt->dataBufferSize;
+				auto freeSize = smallestMemPoolIt->freeDataMemorySize;
+				auto sizeNeeded = numVerts * sizeof(Vertex);
+				GLsizeiptr newSize = bufferSize * 2;
+				while (static_cast<unsigned long long>(newSize - bufferSize + freeSize) < sizeNeeded)
+					newSize *= 2;
 
-			// Remove memory from the free list to allocate it
-			m_freeDataMemory.erase(freeIt.base());
+				resize_buffer(smallestMemPoolIt->vbo, newSize);
+				smallestMemPoolIt->dataBufferSize = newSize;
+
+				GPUAllocationIdentifier newData{
+					.memoryPoolIndex = smallestMemPoolIt->index,
+					.bufferOffset = static_cast<uint_fast32_t>(bufferSize),
+					.vertexCount = (newSize - bufferSize)/sizeof(Vertex)
+				};
+
+				// Merge this new free data for allocation
+				free = merge_with_surrounding_blocks(newData, m_freeDataMemory);
+
+				#ifdef DEBUG
+				std::cout << "DATA BUFFER RESIZE: " << smallestMemPoolIt->index << ", " << newSize / sizeof(Vertex) << "\n";
+				#endif // DEBUG
+			}
 
 			// Copy into memory
 			auto sizeToAllocate = verts.size() * sizeof(Vertex);
@@ -298,10 +440,12 @@ export namespace vxg::core::rendering {
 				});
 			m_memoryPools[free.memoryPoolIndex].freeDataMemorySize -= static_cast<uint_fast32_t>(sizeToAllocate);
 
+			#ifdef DEBUG
 			std::cout << "ALLOC: ";	// TESTING, REMOVE ME
 			for (const auto& x : m_freeDataMemory)
 				std::cout << x.vertexCount << ", ";
 			std::cout << "\n";
+			#endif // DEBUG
 
 			// Return identifier
 			return GPUAllocationIdentifier{
@@ -312,66 +456,48 @@ export namespace vxg::core::rendering {
 		}
 
 		void deallocate_vram_impl(const GPUAllocationIdentifier& alloc) noexcept {
-			GPUAllocationIdentifier free = alloc;
-			
-			// Merge data with surrounding free blocks
-			auto bound = m_freeDataMemory.upper_bound(alloc);	// First element at a memory location greater than the block
-			bool validBound = bound != m_freeDataMemory.end();
+			auto merged = merge_with_surrounding_blocks(alloc, m_freeDataMemory);
 
-			// Greater block
-			if (validBound) {
-				auto upperBound = bound;	// Copy for use in merge
-				bound--;	// Decrement for lesser block - do this now as we may erase lowerBound invalidating the iterator if we do not increment
-				
-				if (upperBound->memoryPoolIndex == alloc.memoryPoolIndex && upperBound->bufferOffset == alloc.bufferOffset + alloc.vertexCount*sizeof(Vertex)) {
-					// Merge
-					free.vertexCount += upperBound->vertexCount;
-
-					// Remove merged block
-					m_freeDataMemory.erase(upperBound);
-				}
-			}
-			else {
-				bound = std::prev(m_freeDataMemory.end());	// There was no greater block, the lesser block must be the last in the set
-			}
-
-			// Lesser block
-			validBound = bound != m_freeDataMemory.end();
-			if (validBound) {
-				if (bound->memoryPoolIndex == alloc.memoryPoolIndex && bound->bufferOffset + bound->vertexCount*sizeof(Vertex) == alloc.bufferOffset) {
-					// Merge
-					free.bufferOffset = bound->bufferOffset;
-					free.vertexCount += bound->vertexCount;
-					
-					// Remove merged block
-					m_freeDataMemory.erase(bound);
-				}
-			}
-			
 			// Add block to free list to deallocate
-			m_freeDataMemory.insert(free);
+			m_freeDataMemory.insert(merged);
 			m_memoryPools[alloc.memoryPoolIndex].freeDataMemorySize += static_cast<uint_fast32_t>(alloc.vertexCount * sizeof(Vertex));
-			// TODO: SET DRAW THING TO 0 WHEN FREEING
 
+			#ifdef DEBUG
 			std::cout << "DEALLOC: ";	// TESTING, REMOVE ME
 			for (const auto& x : m_freeDataMemory) {
 				std::cout << "{vertexCount: " << x.vertexCount << ", memoryPoolIndex: " << x.memoryPoolIndex << ", bufferOffset: " << x.bufferOffset << "}, ";
 			}
 			std::cout << "\n";
+			#endif // DEBUG
 		}
 
 		[[nodiscard]]
 		DrawCommandIdentifier enqueue_draw_impl(const GPUAllocationIdentifier& alloc) noexcept {
 			auto& memPool = m_memoryPools[alloc.memoryPoolIndex];
-			
-			if (memPool.freeDrawMemory.empty()) {
-				// TODO: Resize buffer
-			}
+			DrawCommandRegion free;
 
-			// Get free memory
-			auto freeIt = memPool.freeDrawMemory.begin();
-			auto free = *freeIt;
-			memPool.freeDrawMemory.erase(freeIt);
+			if (!memPool.freeDrawMemory.empty()) {
+				// Get free memory
+				auto freeIt = memPool.freeDrawMemory.begin();
+				free = *freeIt;
+				memPool.freeDrawMemory.erase(freeIt);
+			}
+			else {
+				// Resize buffer
+				auto bufferSize = memPool.queuedDrawsCount*sizeof(DrawArraysIndirectCommand);
+				GLsizeiptr newSize = bufferSize * 2;
+
+				resize_buffer(memPool.drawCommandBuffer, newSize);
+
+				free = DrawCommandRegion{
+					.bufferIndex = static_cast<uint_fast32_t>(memPool.queuedDrawsCount),
+					.size = static_cast<uint_fast32_t>(memPool.queuedDrawsCount)
+				};
+
+				#ifdef DEBUG
+				std::cout << "DRAW BUFFER RESIZE: " << memPool.index << ", " << newSize / sizeof(DrawArraysIndirectCommand) << "\n";
+				#endif // DEBUG
+			}
 			
 			// Copy draw command to memory
 			DrawArraysIndirectCommand drawCommand{
@@ -389,10 +515,12 @@ export namespace vxg::core::rendering {
 					.size = free.size - 1
 				});
 
-			std::cout << "DRAW: " << memPool.freeDrawMemory.begin()->size << "\n";	// TESTING, REMOVE ME
+			#ifdef DEBUG
+			std::cout << "DRAW: " << free.size-1 << "\n";	// TESTING, REMOVE ME
+			#endif // DEBUG
 
 			auto& queuedDrawsCount = m_memoryPools[alloc.memoryPoolIndex].queuedDrawsCount;
-			queuedDrawsCount = std::max(queuedDrawsCount, static_cast<GLsizei>(free.bufferIndex / sizeof(DrawArraysIndirectCommand)) + 1);
+			queuedDrawsCount = std::max(queuedDrawsCount, static_cast<GLsizei>(free.bufferIndex) + 1);
 
 			return DrawCommandIdentifier{
 				.memoryPoolIndex = alloc.memoryPoolIndex,
@@ -401,57 +529,25 @@ export namespace vxg::core::rendering {
 		}
 
 		void dequeue_draw_impl(const DrawCommandIdentifier& drawCommand) noexcept {
-			DrawCommandRegion free = {
-				.bufferIndex = drawCommand.bufferIndex,
-				.size = 1
-			};
-
 			auto& memPool = m_memoryPools[drawCommand.memoryPoolIndex];
 
-			// Merge data with surrounding free blocks
-			auto bound = memPool.freeDrawMemory.upper_bound(free);	// First element at a memory location greater than the block
-			bool validBound = bound != memPool.freeDrawMemory.end();
-
-			// Greater block
-			if (validBound) {
-				auto upperBound = bound;	// Copy for use in merge
-				bound--;	// Decrement for lesser block - do this now as we may erase lowerBound invalidating the iterator if we do not increment
-
-				if (upperBound->bufferIndex == drawCommand.bufferIndex + 1) {
-					// Merge
-					free.size += upperBound->size;
-
-					// Remove merged block
-					memPool.freeDrawMemory.erase(upperBound);
-				}
-			}
-			else {
-				bound = std::prev(memPool.freeDrawMemory.end());	// There was no greater block, the lesser block must be the last in the set
-			}
-
-			// Lesser block
-			validBound = bound != memPool.freeDrawMemory.end();
-			if (validBound) {
-				if (bound->bufferIndex + bound->size == drawCommand.bufferIndex) {
-					// Merge
-					free.bufferIndex = bound->bufferIndex;
-					free.size += bound->size;
-
-					// Remove merged block
-					memPool.freeDrawMemory.erase(bound);
-				}
-			}
+			auto merged = merge_with_surrounding_blocks(DrawCommandRegion{
+					.bufferIndex = drawCommand.bufferIndex,
+					.size = 1
+				}, memPool.freeDrawMemory);
 
 			// Add block to free list to deallocate
-			memPool.freeDrawMemory.insert(free);
+			memPool.freeDrawMemory.insert(merged);
 			GLuint instanceCount = 0;
 			glNamedBufferSubData(memPool.drawCommandBuffer, drawCommand.bufferIndex*sizeof(DrawArraysIndirectCommand) + offsetof(DrawArraysIndirectCommand, instanceCount), sizeof(DrawArraysIndirectCommand::instanceCount), &instanceCount);
 
+			#ifdef DEBUG
 			std::cout << "UNQUEUE DRAW: ";	// TESTING, REMOVE ME
 			for (const auto& x : memPool.freeDrawMemory) {
 				std::cout << "{size: " << x.size << ", bufferIndex: " << x.bufferIndex << "}, ";
 			}
 			std::cout << "\n";
+			#endif // DEBUG
 		}
 
 		void draw_queued_impl() const noexcept {

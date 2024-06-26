@@ -6,9 +6,10 @@ import voxel_game.core;
 import voxel_game.exceptions;
 import voxel_game.utilities;
 
-// TODO: Resizing + minimum free size (max size of chunk)
-// TODO: Refactor deallocation merging code
-// TODO: Remove the Testing things from opengl_backend.ixx
+// TODO: If doing GPU meshing and allocation without returning to CPU minimum free size (max size of chunk)
+// TODO: Refactor merge surrounding blocks and allocation code
+// TODO: Add more robust logging system to opengl_backend.ixx
+// TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
 
 int main() {
 	// Construct rendering context
@@ -19,8 +20,8 @@ int main() {
 		vxg::exceptions::handle_unrecoverable_error<std::exception>,
 		vxg::core::rendering::WindowProperties{ {700, 500}, "Voxel Game", {4, 6} },
 		static_cast<uint16_t>(3),
-		static_cast<uint_fast32_t>(100),
-		static_cast<uint_fast32_t>(10)
+		static_cast<uint_fast32_t>(500),
+		static_cast<uint_fast32_t>(150)
 	);
 
 	// Handle errors

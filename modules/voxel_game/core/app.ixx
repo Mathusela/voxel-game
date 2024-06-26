@@ -36,8 +36,10 @@ export namespace vxg::core {
 			set_rendering_state();
 
 			auto test = m_renderingContext.enqueue_draw_tri();
-			auto tri = m_renderingContext.enqueue_draw_tri();
-			m_renderingContext.dequeue_draw(test);
+			for (int i = 0; i < 900; i++)
+				auto temp = m_renderingContext.enqueue_draw_tri();
+			//auto tri = m_renderingContext.enqueue_draw_tri();
+			//m_renderingContext.dequeue_draw(test);
 
 			render_loop();
 
