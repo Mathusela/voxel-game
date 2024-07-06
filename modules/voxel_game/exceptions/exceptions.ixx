@@ -1,7 +1,6 @@
 module;
 
 #include <exception>
-#include <string_view>
 
 export module voxel_game.exceptions;
 
@@ -10,11 +9,15 @@ export import :helpers;
 export namespace vxg::exceptions {
 
 	struct LoadError : public std::exception {
-		LoadError(std::string_view message) : std::exception(message.data()) {}
+		LoadError(const char* message) : std::exception(message) {}
 	};
 
 	struct InitError : public std::exception {
-		InitError(std::string_view message) : std::exception(message.data()) {}
+		InitError(const char* message) : std::exception(message) {}
+	};
+
+	struct InvalidDataError : public std::exception {
+		InvalidDataError(const char* message) : std::exception(message) {}
 	};
 
 };	// namespae vxg::exceptions

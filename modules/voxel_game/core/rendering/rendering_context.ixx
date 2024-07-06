@@ -1,5 +1,7 @@
 module;
 
+#include <glm/glm.hpp>
+
 #include <memory>
 #include <utility>
 #include <type_traits>
@@ -9,16 +11,10 @@ export module voxel_game.core.rendering:rendering_context;
 
 import :rendering_backend;
 import :window_manager;
-import :structs;
+import voxel_game.core.structs;
+import voxel_game.core.memory;
 
 export namespace vxg::core::rendering {
-
-	struct DrawResourceIdentifier {
-		uint16_t memoryPoolIndex;
-		uint_fast32_t allocBufferOffset;
-		uint_fast32_t drawBufferIndex;
-		std::size_t vertexCount;
-	};
 
 	template <vxg::core::rendering::rendering_backend_implementation Backend>
 	class RenderingContext {
@@ -26,6 +22,8 @@ export namespace vxg::core::rendering {
 		std::unique_ptr<vxg::core::rendering::WindowManager> m_window;
 
 	public:
+		using AllocationIdentifier = Backend::AllocatorType::ObjectAllocationIdentifier;
+
 		template<typename... Args>
 			requires std::is_constructible_v<Backend, Args&&...>
 		RenderingContext(const vxg::core::rendering::WindowProperties& windowProperties, Args&&... backendConstructorArgs)
@@ -66,37 +64,28 @@ export namespace vxg::core::rendering {
 		// void enqueue_draw_chunk() const noexcept {}
 
 		[[nodiscard]]
-		DrawResourceIdentifier enqueue_draw_tri()
-			noexcept(std::is_nothrow_invocable_v<decltype(decltype(m_backend)::enqueue_draw), const std::vector<vxg::core::rendering::Vertex>&>)
+		AllocationIdentifier enqueue_draw_tri(glm::vec3 position)
+			noexcept(std::is_nothrow_invocable_v<decltype(decltype(m_backend)::enqueue_draw), const std::vector<vxg::core::structs::Vertex>&>)
 		{
-			std::vector<vxg::core::rendering::Vertex> verts{
+			std::vector<vxg::core::structs::Vertex> verts{
 				{.position = {-0.5, -0.5, 0.0}},
 				{.position = {0.0, 0.5, 0.0}},
 				{.position = {0.5, -0.5, 0.0}}
 			};
-			
-			auto alloc = m_backend.copy_to_vram(verts);
-			auto drawCommand = m_backend.enqueue_draw(alloc);
 
-			return DrawResourceIdentifier{
-				.memoryPoolIndex = alloc.memoryPoolIndex,
-				.allocBufferOffset = alloc.bufferOffset,
-				.drawBufferIndex = drawCommand.bufferIndex,
-				.vertexCount = alloc.vertexCount
+			vxg::core::structs::ObjectData data{
+				.position = position
 			};
+			
+			auto alloc = m_backend.construct_object(verts, data);
+			m_backend.enqueue_draw(alloc);
+
+			return alloc;
 		}
 
-		void dequeue_draw(const DrawResourceIdentifier& drawResource) {
-			m_backend.dequeue_draw(vxg::core::rendering::DrawCommandIdentifier{
-				.memoryPoolIndex = drawResource.memoryPoolIndex,
-				.bufferIndex = drawResource.drawBufferIndex
-			});
-
-			m_backend.deallocate_vram(vxg::core::rendering::GPUAllocationIdentifier{
-				.memoryPoolIndex = drawResource.memoryPoolIndex,
-				.bufferOffset = drawResource.allocBufferOffset,
-				.vertexCount = drawResource.vertexCount
-			});
+		void dequeue_draw(const AllocationIdentifier& drawResource) {
+			m_backend.dequeue_draw(drawResource);
+			m_backend.destroy_object(drawResource);
 		}
 
 		void draw_queued() const

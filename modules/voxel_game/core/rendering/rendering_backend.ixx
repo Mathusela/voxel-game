@@ -7,26 +7,16 @@ module;
 #include <memory>
 #include <vector>
 #include <type_traits>
-#include <cstdint>
 
 export module voxel_game.core.rendering:rendering_backend;
 
 import :window_manager;
-import :structs;
+import voxel_game.core.structs;
+import voxel_game.core.memory;
 import voxel_game.exceptions;
+import voxel_game.utilities.tmp;
 
 export namespace vxg::core::rendering {
-
-	struct GPUAllocationIdentifier {
-		uint16_t memoryPoolIndex;
-		uint_fast32_t bufferOffset;
-		std::size_t vertexCount;
-	};
-
-	struct DrawCommandIdentifier {
-		uint16_t memoryPoolIndex;
-		uint_fast32_t bufferIndex;
-	};
 
 	template <typename Derived>
 	class RenderingBackend {
@@ -38,7 +28,6 @@ export namespace vxg::core::rendering {
 		}
 		friend Derived;
 
-
 		const Derived* derived_instance() const noexcept {
 			return static_cast<const Derived*>(this);
 		}
@@ -48,6 +37,8 @@ export namespace vxg::core::rendering {
 		}
 
 	public:
+		using ObjectAllocationIdentifier = vxg::utilities::tmp::ExtractNestedTemplate_t<Derived>::ObjectAllocationIdentifier;
+
 		void terminate() noexcept {
 			m_terminated = true;
 			derived_instance()->terminate_impl();
@@ -99,29 +90,28 @@ export namespace vxg::core::rendering {
 		}
 
 		[[nodiscard]]
-		GPUAllocationIdentifier copy_to_vram(const std::vector<vxg::core::rendering::Vertex>& verts)
-			noexcept(noexcept(derived_instance()->copy_to_vram_impl(verts)))
+		ObjectAllocationIdentifier construct_object(const std::vector<vxg::core::structs::Vertex>& verts, const vxg::core::structs::ObjectData& data)
+			noexcept(noexcept(derived_instance()->construct_object_impl(verts, data)))
 		{
-			return derived_instance()->copy_to_vram_impl(verts);
+			return derived_instance()->construct_object_impl(verts, data);
 		}
 
-		void deallocate_vram(const GPUAllocationIdentifier& alloc)
-			noexcept(noexcept(derived_instance()->deallocate_vram_impl(alloc)))
+		void destroy_object(const ObjectAllocationIdentifier& object)
+			noexcept(noexcept(derived_instance()->destroy_object_impl(object)))
 		{
-			derived_instance()->deallocate_vram_impl(alloc);
+			return derived_instance()->destroy_object_impl(object);
 		}
 
-		[[nodiscard]]
-		DrawCommandIdentifier enqueue_draw(const GPUAllocationIdentifier& alloc)
-			noexcept(noexcept(derived_instance()->enqueue_draw_impl(alloc)))
+		void enqueue_draw(const ObjectAllocationIdentifier& object)
+			noexcept(noexcept(derived_instance()->enqueue_draw_impl(object)))
 		{
-			return derived_instance()->enqueue_draw_impl(alloc);
+			derived_instance()->enqueue_draw_impl(object);
 		}
 
-		void dequeue_draw(const DrawCommandIdentifier& drawCommand)
-			noexcept(noexcept(derived_instance()->dequeue_draw_impl(drawCommand)))
+		void dequeue_draw(const ObjectAllocationIdentifier& object)
+			noexcept(noexcept(derived_instance()->dequeue_draw_impl(object)))
 		{
-			derived_instance()->dequeue_draw_impl(drawCommand);
+			derived_instance()->dequeue_draw_impl(object);
 		}
 
 		void draw_queued() const

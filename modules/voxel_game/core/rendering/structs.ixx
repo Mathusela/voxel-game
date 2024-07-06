@@ -1,13 +1,25 @@
 module;
 
-#include <glm/glm.hpp>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-export module voxel_game.core.rendering:structs;
+export module voxel_game.core.rendering.structs;
 
-export namespace vxg::core::rendering {
+export namespace vxg::core::rendering::structs {
 
-	struct Vertex {
-		glm::vec3 position;
+	struct DrawArraysIndirectCommand {
+		GLuint count;
+		GLuint instanceCount;
+		GLuint firstVertex;
+		GLuint baseInstance;
 	};
 
-}; // namespace vxg::core::rendering
+	struct DrawElementsIndirectCommand {
+		GLuint count;
+		GLuint instanceCount;
+		GLuint firstIndex;
+		GLint baseVertex;
+		GLuint baseInstance;
+	};
+
+}; // namespace vxg::core::rendering::structs
