@@ -14,7 +14,10 @@ import voxel_game.logging;
 // TODO: If doing GPU meshing and allocation without returning to CPU minimum free size (max size of chunk)
 // TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
 // TODO: Define NDEBUG for release builds
-// TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdenifier
+// TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
+// TODO: Add log levels/filtering
+// TODO: Make logging thread-safe
+// TODO: Flush log file during program runtime
 
 int main() {
 	// Construct rendering context
