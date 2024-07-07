@@ -173,12 +173,9 @@ export namespace vxg::logging {
 		}
 
 	public:
-		template<typename... Loggers>
 		CombinedLogger(Loggers&&... loggers) noexcept
 			: m_loggers(std::forward<Loggers>(loggers)...) {}
 	};
-	template <typename... Loggers>
-	CombinedLogger(Loggers&&...) -> CombinedLogger<Loggers...>;
 
 	template <template <typename> typename Base>
 	using ConsoleLogger = Base<ConsoleLoggerImpl>;
