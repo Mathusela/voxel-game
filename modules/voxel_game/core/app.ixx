@@ -36,9 +36,9 @@ export namespace vxg::core {
 			// TODO: Add resizing callback
 			set_rendering_state();
 
-			auto test = m_renderingContext.enqueue_draw_tri({0.0, 1.0, 0.0});
+			[[maybe_unused]] auto test = m_renderingContext.enqueue_draw_tri({0.0, 1.0, 0.0});
 			for (int i = 0; i < 900; i++)
-				auto temp = m_renderingContext.enqueue_draw_tri({i, 0.0, 0.0});
+				[[maybe_unused]] auto temp = m_renderingContext.enqueue_draw_tri({i, 0.0, 0.0});
 
 			render_loop();
 

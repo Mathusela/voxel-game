@@ -9,6 +9,7 @@ module;
 #include <fstream>
 #include <type_traits>
 #include <tuple>
+#include <utility>
 
 export module voxel_game.logging:logger;
 
@@ -45,7 +46,6 @@ namespace vxg::logging {
 		void log_impl(LogType logType, std::string_view msg) noexcept {
 			std::cout << format_log(logType, std::string(msg));
 		}
-
 	};
 
 	class FileLoggerImpl {

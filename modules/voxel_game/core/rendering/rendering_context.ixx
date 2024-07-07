@@ -65,7 +65,8 @@ export namespace vxg::core::rendering {
 
 		[[nodiscard]]
 		AllocationIdentifier enqueue_draw_tri(glm::vec3 position)
-			noexcept(std::is_nothrow_invocable_v<decltype(decltype(m_backend)::enqueue_draw), const std::vector<vxg::core::structs::Vertex>&>)
+			noexcept(std::is_nothrow_invocable_v<decltype(&Backend::construct_object), Backend, const std::vector<vxg::core::structs::Vertex>&, vxg::core::structs::ObjectData> &&
+				std::is_nothrow_invocable_v<decltype(&Backend::enqueue_draw), Backend, AllocationIdentifier>)
 		{
 			std::vector<vxg::core::structs::Vertex> verts{
 				{.position = {-0.5, -0.5, 0.0}},
