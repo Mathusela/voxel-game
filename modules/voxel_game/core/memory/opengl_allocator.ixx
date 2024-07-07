@@ -276,7 +276,7 @@ export namespace vxg::core::memory {
 				auto newAllocation = resize_to_fit<ResourceType::Vertex>(smallestMemPoolIt->vertex, size, smallestMemPoolIt->index);
 
 				// Logging
-				vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> RESIZING VERTS: {{Memory Pool: {}}}\n", smallestMemPoolIt->index);
+				vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> RESIZING VERTS: {{Memory Pool: {}}}\n", smallestMemPoolIt->index);
 
 				// Merge this new free data for allocation
 				free = merge_with_surrounding_blocks(newAllocation, m_freeVertexMemory);
@@ -293,7 +293,7 @@ export namespace vxg::core::memory {
 			auto alloc = free;
 			alloc.size = size;
 			// Logging
-			vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> ALLOC VERTS: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
+			vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> ALLOC VERTS: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
 			return alloc;
 		}
 
@@ -314,7 +314,7 @@ export namespace vxg::core::memory {
 				free = resize_to_fit<ResourceType::Data>(memPool.data, 1, memPool.index);
 
 				// Logging
-				vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> RESIZING DATA: {{Memory Pool: {}}}\n", memPool.index);
+				vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> RESIZING DATA: {{Memory Pool: {}}}\n", memPool.index);
 			}
 
 			// Add remainder of free region back to free list
@@ -328,7 +328,7 @@ export namespace vxg::core::memory {
 			auto alloc = free;
 			alloc.size = 1;
 			// Logging
-			vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> ALLOC DATA: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
+			vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> ALLOC DATA: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
 			return alloc;
 		}
 
@@ -350,7 +350,7 @@ export namespace vxg::core::memory {
 				free = resize_to_fit<ResourceType::Draw>(memPool.draw, 1, memPool.index);
 				
 				// Logging
-				vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> RESIZING DRAW: {{Memory Pool: {}}}\n", memPool.index);
+				vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> RESIZING DRAW: {{Memory Pool: {}}}\n", memPool.index);
 			}
 
 			// Add remainder of free region back to free list
@@ -368,7 +368,7 @@ export namespace vxg::core::memory {
 			auto alloc = free;
 			alloc.size = 1;
 			// Logging
-			vxg::logging::std_debug_log().log(vxg::logging::LogType::INFO, "<OpenGL Allocator> ALLOC DRAW: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
+			vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> ALLOC DRAW: {{Memory Pool: {}, Offset: {}, Size: {}}}\n", alloc.poolIndex, alloc.offset, alloc.size);
 			return alloc;
 		}
 

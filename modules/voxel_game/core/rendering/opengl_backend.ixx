@@ -8,7 +8,6 @@ module;
 
 #include <memory>
 #include <vector>
-#include <iostream>
 #include <type_traits>
 #include <string>
 #include <utility>
@@ -20,46 +19,50 @@ import :window_manager;
 import voxel_game.core.structs;
 import voxel_game.exceptions;
 import voxel_game.utilities;
+import voxel_game.logging;
 
-// Taken from https://learnopengl.com/In-Practice/Debugging
+// Adapted from https://learnopengl.com/In-Practice/Debugging
 void APIENTRY debug_callback(GLenum source, GLenum type, unsigned int id, GLenum severity, [[maybe_unused]] GLsizei length, const char* message, [[maybe_unused]] const void* userParam) {
 	// ignore non-significant error/warning codes
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
-	std::cout << "---------------" << std::endl;
-	std::cout << "Debug message (" << id << "): " << message << std::endl;
+	std::string output = "<OpenGL debug callback>\n";
+	//output += "---------------\n";
+	output += "Debug message (" + std::to_string(id) + "): " + message + "\n";
 
-	switch (source)
-	{
-	case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-	case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-	case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-	case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-	} std::cout << std::endl;
+	switch (source) {
+	case GL_DEBUG_SOURCE_API:             output += "Source: API"; break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   output += "Source: Window System"; break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: output += "Source: Shader Compiler"; break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:     output += "Source: Third Party"; break;
+	case GL_DEBUG_SOURCE_APPLICATION:     output += "Source: Application"; break;
+	case GL_DEBUG_SOURCE_OTHER:           output += "Source: Other"; break;
+	}
+	output += "\n";
 
-	switch (type)
-	{
-	case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
-	case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-	case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-	case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-	case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-	case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-	case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-	} std::cout << std::endl;
+	vxg::logging::LogType logType = vxg::logging::LogType::Warning;
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR:               output += "Type: Error"; logType = vxg::logging::LogType::Error; break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: output += "Type: Deprecated Behaviour"; break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  output += "Type: Undefined Behaviour"; break;
+	case GL_DEBUG_TYPE_PORTABILITY:         output += "Type: Portability"; break;
+	case GL_DEBUG_TYPE_PERFORMANCE:         output += "Type: Performance"; break;
+	case GL_DEBUG_TYPE_MARKER:              output += "Type: Marker"; break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:          output += "Type: Push Group"; break;
+	case GL_DEBUG_TYPE_POP_GROUP:           output += "Type: Pop Group"; break;
+	case GL_DEBUG_TYPE_OTHER:               output += "Type: Other"; break;
+	} output += "\n";
 
-	switch (severity)
-	{
-	case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-	case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-	case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-	} std::cout << std::endl;
-	std::cout << std::endl;
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_HIGH:         output += "Severity: High"; break;
+	case GL_DEBUG_SEVERITY_MEDIUM:       output += "Severity: Medium"; break;
+	case GL_DEBUG_SEVERITY_LOW:          output += "Severity: Low"; break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: output += "Severity: Notification"; logType = vxg::logging::LogType::Info; break;
+	}
+	output += "\n";
+	output += "---------------\n";
+
+	vxg::logging::std_debug_log().log(logType, output);
 }
 
 void compile_shader(GLuint shader, const std::string& shaderDisplayName) {
@@ -101,7 +104,7 @@ export namespace vxg::core::rendering {
 				glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 			}
 			else {
-				std::cerr << "Warning: Failed to enable debug output.\n";
+				vxg::logging::std_debug_log().log(vxg::logging::LogType::Warning, "Failed to enable debug output.\n");
 			}
 			#endif // DEBUG
 

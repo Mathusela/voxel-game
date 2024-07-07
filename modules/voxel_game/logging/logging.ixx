@@ -18,4 +18,14 @@ export namespace vxg::logging {
 		return logger;
 	}
 
+	[[nodiscard]]
+	auto& std_release_log() noexcept {
+		static CombinedLogger logger{
+			ConsoleLogger<ReleaseLogger>{},
+			FileLogger<ReleaseLogger>{"release.log"}
+		};
+
+		return logger;
+	}
+
 }; // namespace vxg::logging

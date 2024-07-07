@@ -16,9 +16,9 @@ export module voxel_game.logging:logger;
 export namespace vxg::logging {
 	
 	enum class LogType {
-		INFO,
-		WARNING,
-		ERROR
+		Info,
+		Warning,
+		Error
 	};
 
 }; // namespace vxg::logging
@@ -28,11 +28,11 @@ namespace vxg::logging {
 	[[nodiscard]]
 	std::string format_log(LogType logType, std::string msg) noexcept {
 		switch (logType) {
-		case LogType::INFO:
+		case LogType::Info:
 			return "[INFO] " + msg;
-		case LogType::WARNING:
+		case LogType::Warning:
 			return "[WARNING] " + msg;
-		case LogType::ERROR:
+		case LogType::Error:
 			return "[ERROR] " + msg;
 		default:
 			return "[UNKNOWN] " + msg;
@@ -42,8 +42,8 @@ namespace vxg::logging {
 	struct ConsoleLoggerImpl {
 		void initialize_impl() noexcept {}
 
-		void log_impl(LogType logType, std::string msg) noexcept {
-			std::cout << format_log(logType, msg);
+		void log_impl(LogType logType, std::string_view msg) noexcept {
+			std::cout << format_log(logType, std::string(msg));
 		}
 
 	};
@@ -56,8 +56,8 @@ namespace vxg::logging {
 			m_file.open(filePath);
 		}
 
-		void log_impl(LogType logType, std::string msg) noexcept {
-			m_file << format_log(logType, msg);
+		void log_impl(LogType logType, std::string_view msg) noexcept {
+			m_file << format_log(logType, std::string(msg));
 		}
 	};
 

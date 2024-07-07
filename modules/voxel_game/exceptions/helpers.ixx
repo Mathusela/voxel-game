@@ -1,6 +1,5 @@
 module;
 
-#include <iostream>
 #include <variant>
 #include <type_traits>
 #include <utility>
@@ -8,6 +7,7 @@ module;
 export module voxel_game.exceptions:helpers;
 
 import voxel_game.typedefs;
+import voxel_game.logging;
 
 namespace vxg::exceptions {
 
@@ -36,8 +36,7 @@ export namespace vxg::exceptions {
 	template <typename T>
 	[[nodiscard]]
 	vxg::ExitCode handle_unrecoverable_error(const T& error) noexcept {
-		std::cout << "Encountered unrecoverable error!\n";
-		std::cerr << error.what() << "\n";
+		vxg::logging::std_release_log().log(vxg::logging::LogType::Error, "Encountered unrecoverable error: {}\n", error.what());
 		return EXIT_FAILURE;
 	}
 
