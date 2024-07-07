@@ -7,7 +7,6 @@ module;
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <vector>
 #include <type_traits>
 #include <tuple>
 
@@ -66,7 +65,6 @@ namespace vxg::logging {
 
 // EXPORTED
 export namespace vxg::logging {
-
 
 	template <typename Derived>
 	class Logger {
@@ -144,9 +142,7 @@ export namespace vxg::logging {
 
 		template<typename... Args>
 		void initialize(Args&&... args) noexcept {
-			#ifdef DEBUG
 			m_implementation.initialize_impl(std::forward<Args>(args)...);
-			#endif // DEBUG
 		}
 
 	public:

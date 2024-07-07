@@ -2,8 +2,6 @@ module;
 
 #include "voxel_game/debug_macros.hpp"
 
-#include <memory>
-
 export module voxel_game.logging;
 
 export import :logger;
