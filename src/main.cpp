@@ -7,10 +7,11 @@ import voxel_game.core;
 import voxel_game.exceptions;
 import voxel_game.utilities;
 
+import voxel_game.logging;
+
 // NOTE: Module local definitions are still namespaced due to MSVC tooling limitations leading to linker errors
 
 // TODO: If doing GPU meshing and allocation without returning to CPU minimum free size (max size of chunk)
-// TODO: Add more robust logging system
 // TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
 // TODO: Define NDEBUG for release builds
 // TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdenifier
