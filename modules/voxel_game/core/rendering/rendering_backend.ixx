@@ -21,6 +21,7 @@ export namespace vxg::core::rendering {
 	template <typename Derived>
 	class RenderingBackend {
 		bool m_terminated = false;
+		bool m_initialized = false;
 		
 		RenderingBackend() {
 			if (!glfwInit())
@@ -68,6 +69,7 @@ export namespace vxg::core::rendering {
 		void initialize_api()
 			noexcept(noexcept(derived_instance()->initialize_api_impl()))
 		{
+			m_initialized = true;
 			derived_instance()->initialize_api_impl();
 		}
 

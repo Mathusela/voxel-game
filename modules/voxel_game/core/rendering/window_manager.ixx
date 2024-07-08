@@ -48,6 +48,7 @@ export namespace vxg::core::rendering {
 			#endif // DEBUG
 
 			GLFWwindow* window = glfwCreateWindow(properties.resolution.first, properties.resolution.second, m_title.c_str(), nullptr, nullptr);
+			//window = nullptr;
 			if (!window)
 				throw vxg::exceptions::InitError("Failed to initialize window.");
 

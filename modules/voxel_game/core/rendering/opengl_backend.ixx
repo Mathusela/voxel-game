@@ -151,7 +151,8 @@ export namespace vxg::core::rendering {
 		}
 
 		void terminate_impl() noexcept {
-			glDeleteProgram(m_shaderProgram);
+			if (Base::m_initialized)
+				glDeleteProgram(m_shaderProgram);
 
 			glfwTerminate();
 		}

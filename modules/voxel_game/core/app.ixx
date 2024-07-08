@@ -4,6 +4,7 @@ module;
 
 #include <utility>
 #include <iostream>
+#include <cstdlib>
 
 export module voxel_game.core:app;
 

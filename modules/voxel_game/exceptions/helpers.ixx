@@ -3,6 +3,8 @@ module;
 #include <variant>
 #include <type_traits>
 #include <utility>
+#include <functional>
+#include <cstdlib>
 
 export module voxel_game.exceptions:helpers;
 
