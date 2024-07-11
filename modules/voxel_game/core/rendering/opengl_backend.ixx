@@ -265,6 +265,12 @@ export namespace vxg::core::rendering {
 		OpenGLBackend(Args&&... allocatorArgs)
 			: Base(), m_allocator(Allocator {std::forward<Args>(allocatorArgs)...}) {}
 
+		// Copy constructor
+		OpenGLBackend(const OpenGLBackend& ob) = delete;
+
+		// Copy assignment
+		OpenGLBackend& operator=(const OpenGLBackend& ob) = delete;
+
 		// Move constructor
 		OpenGLBackend(OpenGLBackend&& ob) noexcept
 			: Base(std::move(ob)), m_allocator(std::move(ob.m_allocator)), m_shaderProgram(std::move(ob.m_shaderProgram)), m_ubo(std::move(ob.m_ubo)) {}
@@ -276,6 +282,8 @@ export namespace vxg::core::rendering {
 			m_shaderProgram = std::move(ob.m_shaderProgram);
 			m_ubo = std::move(ob.m_ubo);
 		}
+
+		~OpenGLBackend() noexcept = default;
 	};
 
 }; // namespace vxg::core::rendering

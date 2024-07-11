@@ -25,6 +25,7 @@ export namespace vxg::core::memory {
 		}
 
 		bool m_terminated = false;
+		bool m_initialized = false;
 
 	public:
 		using VertexType = typename GpuAllocatorTraits<Derived>::VertexType;
@@ -47,17 +48,17 @@ export namespace vxg::core::memory {
 
 		// Move constructor
 		GpuAllocator(GpuAllocator&& ga) noexcept {
+			m_initialized = ga.m_initialized;
+			m_terminated = ga.m_terminated;
 			ga.m_terminated = true;
 		}
 
 		// Move assignment
-		GpuAllocator& operator=(GpuAllocator&& rb) noexcept {
-			rb.m_terminated = true;
-		}
+		GpuAllocator& operator=(GpuAllocator&& ga) = delete;
 
 		void terminate() noexcept {
-			m_terminated = true;
 			derived_instance()->terminate_impl();
+			m_terminated = true;
 		}
 
 		virtual ~GpuAllocator() noexcept {
@@ -69,6 +70,7 @@ export namespace vxg::core::memory {
 			noexcept(noexcept(derived_instance()->initialize_impl()))
 		{
 			derived_instance()->initialize_impl();
+			m_initialized = true;
 		}
 
 		[[nodiscard]]

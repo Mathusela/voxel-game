@@ -15,6 +15,8 @@ import voxel_game.utilities;
 // TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
 // TODO: Define NDEBUG for release builds
 // TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
+// TODO: Error handling for program linking
+// TODO: Add resize callback
 
 // TODO: Add log levels/filtering
 // TODO: Make logging thread-safe
@@ -36,9 +38,6 @@ import voxel_game.utilities;
 
 // TODO: Add option to update portion of UBO (e.g. may only have to update matrices)
 // TODO: Finish camera_controller function
-
-// FIXME: Is OpenGLAllocator::initialize() running 3 times?
-// FIXME: Check moving and stuff is working for OpenGLAllocator and OpenGLBackend
 
 int main() {
 	// Construct rendering context

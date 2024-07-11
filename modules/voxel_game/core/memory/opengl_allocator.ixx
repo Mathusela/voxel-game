@@ -560,6 +560,25 @@ export namespace vxg::core::memory {
 
 		OpenGLAllocator(const uint16_t numMemoryPools, const size_t vertexBufferInitialSize, const size_t dataBufferInitialSize, const size_t drawBufferInitialSize)
 			: Base(), m_numMemoryPools(numMemoryPools), m_vertexBufferInitialSize(vertexBufferInitialSize), m_dataBufferInitialSize(dataBufferInitialSize), m_drawBufferInitialSize(drawBufferInitialSize) {}
+	
+		// Copy constructor
+		OpenGLAllocator(const OpenGLAllocator& oa) = delete;
+
+		// Copy assignment
+		OpenGLAllocator& operator=(const OpenGLAllocator& oa) = delete;
+
+		// Move constructor
+		OpenGLAllocator(OpenGLAllocator&& oa) noexcept
+			: Base(std::move(oa)), m_numMemoryPools(oa.m_numMemoryPools), m_vertexBufferInitialSize(m_vertexBufferInitialSize), m_dataBufferInitialSize(m_dataBufferInitialSize), m_drawBufferInitialSize(m_drawBufferInitialSize)
+		{
+			m_memoryPools = std::move(oa.m_memoryPools);
+			m_freeVertexMemory = std::move(oa.m_freeVertexMemory);
+		}
+
+		// Move assignment
+		OpenGLAllocator& operator=(OpenGLAllocator&& oa) = delete;
+
+		~OpenGLAllocator() noexcept = default;
 	};
 
 }; // namespace vxg::core::memory
