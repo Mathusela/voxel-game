@@ -12,23 +12,20 @@ module;
 export module voxel_game.core.rendering:window_manager;
 
 import voxel_game.exceptions;
+import voxel_game.core.rendering.structs;
 
 export namespace vxg::core::rendering {
 
-	struct APIVersion {
-		int8_t major;
-		int8_t minor;
-	};
-
 	struct WindowProperties {
-		std::pair<unsigned int, unsigned int> resolution;
+		vxg::core::rendering::structs::ScreenSize resolution;
 		std::string_view title;
-		vxg::core::rendering::APIVersion version;
+		vxg::core::rendering::structs::APIVersion version;
+		int samples;
 	};
 
 	class WindowManager {
 		GLFWwindow* m_handle;
-		std::pair<unsigned int, unsigned int> m_resolution;
+		vxg::core::rendering::structs::ScreenSize m_resolution;
 		std::string m_title;
 
 	public:
@@ -42,13 +39,13 @@ export namespace vxg::core::rendering {
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, properties.version.major);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, properties.version.minor);
 			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+			glfwWindowHint(GLFW_SAMPLES, properties.samples);
 
 			#ifdef DEBUG
 			glfwWindowHint(GLFW_CONTEXT_DEBUG, true);			
 			#endif // DEBUG
 
-			GLFWwindow* window = glfwCreateWindow(properties.resolution.first, properties.resolution.second, m_title.c_str(), nullptr, nullptr);
-			//window = nullptr;
+			GLFWwindow* window = glfwCreateWindow(properties.resolution.width, properties.resolution.height, m_title.c_str(), nullptr, nullptr);
 			if (!window)
 				throw vxg::exceptions::InitError("Failed to initialize window.");
 
@@ -115,7 +112,7 @@ export namespace vxg::core::rendering {
 		}
 
 		[[nodiscard]]
-		std::pair<unsigned int, unsigned int> resolution() const noexcept {
+		vxg::core::rendering::structs::ScreenSize resolution() const noexcept {
 			return m_resolution;
 		}
 

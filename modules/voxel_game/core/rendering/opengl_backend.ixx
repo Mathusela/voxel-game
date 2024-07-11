@@ -5,6 +5,7 @@ module;
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <memory>
 #include <vector>
@@ -16,6 +17,7 @@ export module voxel_game.core.rendering:opengl_backend;
 
 import :rendering_backend;
 import :window_manager;
+import :camera;
 import voxel_game.core.structs;
 import voxel_game.exceptions;
 import voxel_game.utilities;
@@ -73,11 +75,24 @@ void compile_shader(GLuint shader, const std::string& shaderDisplayName) {
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		throw vxg::exceptions::InitError((shaderDisplayName + " compilation failed.\n" + std::string(infoLog)).c_str());
+		throw vxg::exceptions::InitError(shaderDisplayName + " compilation failed.\n" + std::string(infoLog));
 	}
 }
 
 export namespace vxg::core::rendering {
+
+	struct OpenGLUniforms {
+		glm::mat4 viewMatrix;
+		glm::mat4 projectionMatrix;
+	};
+
+	template <typename Allocator>
+	class OpenGLBackend;
+
+	template <typename Allocator>
+	struct RenderingBackendTraits<OpenGLBackend<Allocator>> {
+		using UniformType = OpenGLUniforms;
+	};
 
 	template <typename Allocator>
 	class OpenGLBackend final : public RenderingBackend<OpenGLBackend<Allocator>> {
@@ -115,16 +130,23 @@ export namespace vxg::core::rendering {
 			const char* vertexShaderSource =
 				"#version 460 core\n"
 				"layout (location = 0) in vec3 vPos;\n"
-				"layout (location = 1) in vec3 objectPosition;\n"
-				"out vec3 fPos;\n"
+				"layout (location = 1) in vec4 modelMatrixA;\n"
+				"layout (location = 2) in vec4 modelMatrixB;\n"
+				"layout (location = 3) in vec4 modelMatrixC;\n"
+				"layout (location = 4) in vec4 modelMatrixD;\n"
+				"uniform mat4 viewMatrix;\n"
+				"uniform mat4 projectionMatrix;\n"
+				"out vec3 fWorldPos;\n"
 				"void main() {\n"
-				"    fPos = vPos + objectPosition;\n"
-				"    gl_Position = vec4(fPos, 1.0);"
+				"    mat4 modelMatrix = mat4(modelMatrixA, modelMatrixB, modelMatrixC, modelMatrixD);\n"
+				"    vec4 worldPos = modelMatrix * vec4(vPos, 1.0);\n"
+				"    vec3 fWorldPos = worldPos.xyz;\n"
+				"    gl_Position = projectionMatrix * viewMatrix * worldPos;\n"
 				"}";
 
 			const char* fragmentShaderSource =
 				"#version 460 core\n"
-				"in vec3 fPos;\n"
+				"in vec3 fWorldPos;\n"
 				"out vec4 fCol;\n"
 				"void main() {\n"
 				"    fCol = vec4(1.0, 0.0, 0.0, 1.0);\n"
@@ -146,7 +168,7 @@ export namespace vxg::core::rendering {
 			glAttachShader(m_shaderProgram, fragmentShader);
 			glLinkProgram(m_shaderProgram);
 			// TODO: Error handling for program linking
-
+			
 			glUseProgram(m_shaderProgram);
 		}
 
@@ -211,8 +233,22 @@ export namespace vxg::core::rendering {
 			glBindVertexArray(NULL);
 		}
 
-		void configure_viewport_impl(unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+		void update_uniforms_impl(const Base::UniformType& data) noexcept {
+			// TODO: Use reflection over UniformType to update uniforms
+			glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(data.viewMatrix));
+			glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(data.projectionMatrix));
+		}
+
+		void configure_viewport_impl(unsigned int x, unsigned int y, unsigned int width, unsigned int height) noexcept {
 			glViewport(x, y, width, height);
+		}
+
+		void enable_depth_testing_impl() noexcept {
+			glEnable(GL_DEPTH_TEST);
+		}
+
+		void enable_multisampling_impl() noexcept {
+			glEnable(GL_MULTISAMPLE);
 		}
 
 	public:
@@ -225,12 +261,13 @@ export namespace vxg::core::rendering {
 
 		// Move constructor
 		OpenGLBackend(OpenGLBackend&& ob) noexcept
-			: Base(std::move(ob)), m_allocator(std::move(ob.m_allocator)) {}
+			: Base(std::move(ob)), m_allocator(std::move(ob.m_allocator)), m_shaderProgram(std::move(ob.m_shaderProgram)) {}
 
 		// Move assignment
 		OpenGLBackend& operator=(OpenGLBackend&& ob) noexcept {
 			Base::operator=(std::move(ob));
 			m_allocator = std::move(ob.m_allocator);
+			m_shaderProgram = std::move(ob.m_shaderProgram);
 		}
 	};
 

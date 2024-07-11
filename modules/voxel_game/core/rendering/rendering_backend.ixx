@@ -11,12 +11,16 @@ module;
 export module voxel_game.core.rendering:rendering_backend;
 
 import :window_manager;
+import :camera;
 import voxel_game.core.structs;
 import voxel_game.core.memory;
 import voxel_game.exceptions;
 import voxel_game.utilities.tmp;
 
 export namespace vxg::core::rendering {
+
+	template <typename T>
+	struct RenderingBackendTraits;
 
 	template <typename Derived>
 	class RenderingBackend {
@@ -39,10 +43,11 @@ export namespace vxg::core::rendering {
 
 	public:
 		using ObjectAllocationIdentifier = vxg::utilities::tmp::ExtractNestedTemplate_t<Derived>::ObjectAllocationIdentifier;
+		using UniformType = typename RenderingBackendTraits<Derived>::UniformType;
 
 		void terminate() noexcept {
-			m_terminated = true;
 			derived_instance()->terminate_impl();
+			m_terminated = true;
 		}
 		
 		virtual ~RenderingBackend() noexcept {
@@ -58,19 +63,23 @@ export namespace vxg::core::rendering {
 
 		// Move constructor
 		RenderingBackend(RenderingBackend&& rb) noexcept {
+			m_initialized = rb.m_initialized;
+			m_terminated = rb.m_terminated;
 			rb.m_terminated = true;
 		}
 
 		// Move assignment
 		RenderingBackend& operator=(RenderingBackend&& rb) noexcept {
+			m_initialized = rb.m_initialized;
+			m_terminated = rb.m_terminated;
 			rb.m_terminated = true;
 		}
 
 		void initialize_api()
 			noexcept(noexcept(derived_instance()->initialize_api_impl()))
 		{
-			m_initialized = true;
 			derived_instance()->initialize_api_impl();
+			m_initialized = true;
 		}
 
 		std::unique_ptr<WindowManager> construct_window(const vxg::core::rendering::WindowProperties& properties) const
@@ -122,10 +131,28 @@ export namespace vxg::core::rendering {
 			derived_instance()->draw_queued_impl();
 		}
 
+		void update_uniforms(const UniformType& data)
+			noexcept(noexcept(derived_instance()->update_uniforms_impl(data)))
+		{
+			derived_instance()->update_uniforms_impl(data);
+		}
+
 		void configure_viewport(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
 			noexcept(noexcept(derived_instance()->configure_viewport_impl(x, y, width, height)))
 		{
 			derived_instance()->configure_viewport_impl(x, y, width, height);
+		}
+
+		void enable_depth_testing()
+			noexcept(noexcept(derived_instance()->enable_depth_testing_impl()))
+		{
+			derived_instance()->enable_depth_testing_impl();
+		}
+
+		void enable_multisampling()
+			noexcept(noexcept(derived_instance()->enable_multisampling_impl()))
+		{
+			derived_instance()->enable_multisampling_impl();
 		}
 	};
 

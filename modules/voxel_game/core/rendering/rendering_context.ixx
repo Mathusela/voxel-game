@@ -1,6 +1,7 @@
 module;
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <memory>
 #include <utility>
@@ -11,6 +12,7 @@ export module voxel_game.core.rendering:rendering_context;
 
 import :rendering_backend;
 import :window_manager;
+import :camera;
 import voxel_game.core.structs;
 import voxel_game.core.memory;
 
@@ -32,7 +34,7 @@ export namespace vxg::core::rendering {
 			m_window = m_backend.construct_window(windowProperties);
 			m_backend.initialize_api();
 
-			m_backend.configure_viewport(0, 0, m_window->resolution().first, m_window->resolution().second);
+			m_backend.configure_viewport(0, 0, m_window->resolution().width, m_window->resolution().height);
 		}
 
 		// Copy constructor
@@ -74,8 +76,10 @@ export namespace vxg::core::rendering {
 				{.position = {0.5, -0.5, 0.0}}
 			};
 
+			auto modelMatrix = glm::translate(glm::mat4(1.0f), position);
+			
 			vxg::core::structs::ObjectData data{
-				.position = position
+				.modelMatrix = modelMatrix
 			};
 			
 			auto alloc = m_backend.construct_object(verts, data);
@@ -89,18 +93,23 @@ export namespace vxg::core::rendering {
 			m_backend.destroy_object(drawResource);
 		}
 
-		void draw_queued() const
-			noexcept(noexcept(m_backend.draw_queued()))
+		void draw_queued(const Camera& camera)
+			noexcept(noexcept(m_backend.draw_queued()) &&
+				std::is_nothrow_invocable_v<decltype(&Backend::update_uniforms), Backend, typename Backend::UniformType>)
 		{
+			m_backend.update_uniforms({
+				.viewMatrix = camera.view_matrix(),
+				.projectionMatrix = camera.projection_matrix()
+			});
 			m_backend.draw_queued();
 		}
 
-		void draw_and_present() const
-			noexcept(noexcept(m_backend.clear_screen()) && noexcept(draw_queued()))
+		void draw_and_present(const Camera& camera)
+			noexcept(noexcept(m_backend.clear_screen()) && noexcept(draw_queued(camera)))
 		{
 			m_backend.clear_screen();
 
-			draw_queued();
+			draw_queued(camera);
 
 			m_window->swap_buffers();
 			m_window->poll_events();

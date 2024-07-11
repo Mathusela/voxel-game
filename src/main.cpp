@@ -15,10 +15,13 @@ import voxel_game.utilities;
 // TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
 // TODO: Define NDEBUG for release builds
 // TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
+
 // TODO: Add log levels/filtering
 // TODO: Make logging thread-safe
 // TODO: Flush log file during program runtime
 // TODO: Add buffer to logging
+// TODO: Multi-threaded logging
+
 // TODO: Ensure that construction (especially data construct) in OpenGLBackend works if input struct is padded
 // TODO: Add more comprehensive error handling and logging
 // TODO: Make sure destructors don't throw if exceptions are thrown in initialization
@@ -30,9 +33,7 @@ import voxel_game.utilities;
 // TODO: Can I add support for templated classes?
 // TODO: Enum support
 
-// TODO: Move camera stuff to update uniforms function (using UBO), could use set_camera in the backend?
-// TODO: Use ScreenSize (currently in camera.ixx) in WindowManager
-// TODO: Move camera to its own namespace within rendering
+// TODO: Move update uniforms function to use UBO
 // TODO: Finish camera_controller function
 
 // FIXME: Is OpenGLAllocator::initialize() running 3 times?

@@ -5,5 +5,7 @@ target_sources(modules PUBLIC
 	"opengl_backend.ixx"
 	"rendering_context.ixx"
 	"window_manager.ixx"
-	"structs.ixx"
+	"camera.ixx"
 )
+
+add_subdirectory("structs/")

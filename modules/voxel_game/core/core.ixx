@@ -5,3 +5,4 @@ export import :app;
 export import voxel_game.core.rendering;
 export import voxel_game.core.memory;
 export import voxel_game.core.structs;
+export import voxel_game.core.logic;

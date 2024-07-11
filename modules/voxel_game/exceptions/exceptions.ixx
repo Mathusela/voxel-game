@@ -21,4 +21,8 @@ export namespace vxg::exceptions {
 		InvalidDataError(std::string_view message) : std::logic_error(message.data()) {}
 	};
 
+	struct MemorySafetyError : public std::runtime_error {
+		MemorySafetyError(std::string_view message) : std::runtime_error(message.data()) {}
+	};
+
 }; // namespcae vxg::exceptions

@@ -6,3 +6,4 @@ target_sources(modules PUBLIC
 )
 
 add_subdirectory("tmp/")
+add_subdirectory("memory/")
