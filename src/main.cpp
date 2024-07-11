@@ -32,11 +32,13 @@ import voxel_game.utilities;
 // TODO: Documentation and error handling/asserts in reflection code
 // TODO: Can I add support for templated classes?
 // TODO: Enum support
+// TODO: Universal class printer
 
-// TODO: Move update uniforms function to use UBO
+// TODO: Add option to update portion of UBO (e.g. may only have to update matrices)
 // TODO: Finish camera_controller function
 
 // FIXME: Is OpenGLAllocator::initialize() running 3 times?
+// FIXME: Check moving and stuff is working for OpenGLAllocator and OpenGLBackend
 
 int main() {
 	// Construct rendering context

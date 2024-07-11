@@ -101,6 +101,7 @@ export namespace vxg::core::rendering {
 
 		Allocator m_allocator;
 		GLuint m_shaderProgram;
+		GLuint m_ubo;
 
 		// Depends on a current window context
 		void initialize_api_impl() {
@@ -134,8 +135,10 @@ export namespace vxg::core::rendering {
 				"layout (location = 2) in vec4 modelMatrixB;\n"
 				"layout (location = 3) in vec4 modelMatrixC;\n"
 				"layout (location = 4) in vec4 modelMatrixD;\n"
-				"uniform mat4 viewMatrix;\n"
-				"uniform mat4 projectionMatrix;\n"
+				"layout (std140, binding=0) uniform Uniforms {\n"
+				"    mat4 viewMatrix;\n"
+				"    mat4 projectionMatrix;\n"
+				"};\n"
 				"out vec3 fWorldPos;\n"
 				"void main() {\n"
 				"    mat4 modelMatrix = mat4(modelMatrixA, modelMatrixB, modelMatrixC, modelMatrixD);\n"
@@ -170,6 +173,11 @@ export namespace vxg::core::rendering {
 			// TODO: Error handling for program linking
 			
 			glUseProgram(m_shaderProgram);
+
+			// Uniform buffer object
+			glCreateBuffers(1, &m_ubo);
+			glNamedBufferStorage(m_ubo, sizeof(Base::UniformType), nullptr, GL_DYNAMIC_STORAGE_BIT);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo);
 		}
 
 		void terminate_impl() noexcept {
@@ -234,9 +242,7 @@ export namespace vxg::core::rendering {
 		}
 
 		void update_uniforms_impl(const Base::UniformType& data) noexcept {
-			// TODO: Use reflection over UniformType to update uniforms
-			glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "viewMatrix"), 1, GL_FALSE, glm::value_ptr(data.viewMatrix));
-			glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, "projectionMatrix"), 1, GL_FALSE, glm::value_ptr(data.projectionMatrix));
+			glNamedBufferSubData(m_ubo, 0, sizeof(Base::UniformType), &data);
 		}
 
 		void configure_viewport_impl(unsigned int x, unsigned int y, unsigned int width, unsigned int height) noexcept {
@@ -261,13 +267,14 @@ export namespace vxg::core::rendering {
 
 		// Move constructor
 		OpenGLBackend(OpenGLBackend&& ob) noexcept
-			: Base(std::move(ob)), m_allocator(std::move(ob.m_allocator)), m_shaderProgram(std::move(ob.m_shaderProgram)) {}
+			: Base(std::move(ob)), m_allocator(std::move(ob.m_allocator)), m_shaderProgram(std::move(ob.m_shaderProgram)), m_ubo(std::move(ob.m_ubo)) {}
 
 		// Move assignment
 		OpenGLBackend& operator=(OpenGLBackend&& ob) noexcept {
 			Base::operator=(std::move(ob));
 			m_allocator = std::move(ob.m_allocator);
 			m_shaderProgram = std::move(ob.m_shaderProgram);
+			m_ubo = std::move(ob.m_ubo);
 		}
 	};
 
