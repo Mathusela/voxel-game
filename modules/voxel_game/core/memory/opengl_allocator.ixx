@@ -4,6 +4,7 @@ module;
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -23,6 +24,7 @@ import voxel_game.core.rendering.structs;
 import voxel_game.utilities;
 import voxel_game.exceptions;
 import voxel_game.logging;
+import voxel_game.reflection;
 
 namespace vxg::core::memory {
 
@@ -515,17 +517,21 @@ export namespace vxg::core::memory {
 				// Bind VBO to binding index
 				glVertexArrayVertexBuffer(vao, 0, vertexBuffer, 0, sizeof(VertexType));
 				glVertexArrayVertexBuffer(vao, 1, dataBuffer, 0, sizeof(DataType));
-				// Enable attribute indices
-				glEnableVertexArrayAttrib(vao, 0);
-				glEnableVertexArrayAttrib(vao, 1);
-				// Bind attributes to attribute indicies
-				glVertexArrayAttribFormat(vao, 0, vxg::utilities::num_components<decltype(VertexType::position)>(), GL_FLOAT, GL_FALSE, offsetof(VertexType, position));
-				glVertexArrayAttribFormat(vao, 1, vxg::utilities::num_components<decltype(DataType::position)>(), GL_FLOAT, GL_FALSE, offsetof(DataType, position));
-				// Bind attribute indices to binding indices
-				glVertexArrayAttribBinding(vao, 0, 0);
-				glVertexArrayAttribBinding(vao, 1, 1);
-				// Set binding indices' divisors
-				glVertexArrayBindingDivisor(vao, 1, 1);
+				// Vertex attributes
+				using VertexTypeInfo = vxg::reflection::ClassInfo<VertexType>;
+				VertexTypeInfo::for_each_member([&](auto member) {
+					using Member = decltype(member);
+					glEnableVertexArrayAttrib(vao, Member::offset);	// Enable attribute index
+					glVertexArrayAttribFormat(vao, Member::offset, vxg::utilities::num_components<typename Member::Type>(), GL_FLOAT, GL_FALSE, Member::offset),	// Bind attribute to attribute index
+					glVertexArrayAttribBinding(vao, Member::offset, 0);	// Bind attribute index to binding index
+				});
+				// Object attributes
+				for (int j=0; j<4; j++) {
+					glEnableVertexArrayAttrib(vao, 1+j);	// Enable attribute index
+					glVertexArrayAttribFormat(vao, 1+j, 4, GL_FLOAT, GL_FALSE, offsetof(DataType, modelMatrix) + sizeof(glm::vec4)*j);	// Bind attribute to attribute index
+					glVertexArrayAttribBinding(vao, 1+j, 1);	// Bind attribute index to binding index
+				}
+				glVertexArrayBindingDivisor(vao, 1, 1);	// Set binding index's divisor
 			}
 		}
 

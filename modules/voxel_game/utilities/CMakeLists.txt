@@ -3,5 +3,6 @@ target_sources(modules PUBLIC
 	"utilities.ixx"
 	"deferred_function.ixx"
 	"glm_helpers.ixx"
-	"tmp.ixx"
 )
+
+add_subdirectory("tmp/")

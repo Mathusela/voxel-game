@@ -12,7 +12,7 @@ set(CMAKE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/pdb")
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 if (MSVC)
-    add_compile_options(/W4)
+    add_compile_options(/W4 /Zc:preprocessor)
 else()
     add_compile_options(-Wall -Wextra -pedantic)
 endif()
