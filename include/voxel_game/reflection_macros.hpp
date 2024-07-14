@@ -5,23 +5,17 @@
 #include <cstddef>
 
 #define DETAIL_VXG_SCAN0(...) __VA_ARGS__	// Expand 2 arguments
-#define DETAIL_VXG_SCAN1(...) DETAIL_VXG_SCAN0(SCAN0(__VA_ARGS__))	// Expand 4 arguments
-#define DETAIL_VXG_SCAN2(...) DETAIL_VXG_SCAN1(SCAN1(__VA_ARGS__))	// Expand 8 arguments
-#define DETAIL_VXG_SCAN3(...) DETAIL_VXG_SCAN2(SCAN2(__VA_ARGS__))	// Expand 16 arguments
-#define DETAIL_VXG_SCAN4(...) DETAIL_VXG_SCAN3(SCAN3(__VA_ARGS__))	// Expand 32 arguments
+#define DETAIL_VXG_SCAN1(...) DETAIL_VXG_SCAN0(DETAIL_VXG_SCAN0(__VA_ARGS__))	// Expand 4 arguments
+#define DETAIL_VXG_SCAN2(...) DETAIL_VXG_SCAN1(DETAIL_VXG_SCAN1(__VA_ARGS__))	// Expand 8 arguments
+#define DETAIL_VXG_SCAN3(...) DETAIL_VXG_SCAN2(DETAIL_VXG_SCAN2(__VA_ARGS__))	// Expand 16 arguments
+#define DETAIL_VXG_SCAN4(...) DETAIL_VXG_SCAN3(DETAIL_VXG_SCAN3(__VA_ARGS__))	// Expand 32 arguments
 #define DETAIL_VXG_SCAN(...) DETAIL_VXG_SCAN4(__VA_ARGS__)
 
 #define DETAIL_VXG_EMPTY
 
-#define DETAIL_VXG_MAP_END(...)
-#define DETAIL_VXG_MAP_GET_END() 0, DETAIL_VXG_MAP_END
-#define DETAIL_VXG_MAP_GO_NEXT_INDIRECTION(discard, NM, ...) NM
-#define DETAIL_VXG_MAP_GO_NEXT(discard, NM) DETAIL_VXG_SCAN0(DETAIL_VXG_MAP_GO_NEXT_INDIRECTION(discard, NM))
-#define DETAIL_VXG_MAP_NEXT(NM, next) DETAIL_VXG_MAP_GO_NEXT(MAP_GET_END next, NM)
-
-#define DETAIL_VXG_MAP0(M, x, next, ...) M(x) DETAIL_VXG_MAP_NEXT(DETAIL_VXG_MAP1, next) DETAIL_VXG_EMPTY (M, next, __VA_ARGS__)
-#define DETAIL_VXG_MAP1(M, x, next, ...) M(x) DETAIL_VXG_MAP_NEXT(DETAIL_VXG_MAP0, next) DETAIL_VXG_EMPTY (M, next, __VA_ARGS__)
-#define DETAIL_VXG_MAP(M, ...) __VA_OPT__( DETAIL_VXG_SCAN(DETAIL_VXG_MAP0(M, __VA_ARGS__, ())) )
+#define DETAIL_VXG_MAP0(M, x, ...) M(x) __VA_OPT__( DETAIL_VXG_MAP1 DETAIL_VXG_EMPTY (M, __VA_ARGS__) )
+#define DETAIL_VXG_MAP1(M, x, ...) M(x) __VA_OPT__( DETAIL_VXG_MAP0 DETAIL_VXG_EMPTY (M, __VA_ARGS__) )
+#define DETAIL_VXG_MAP(M, ...) __VA_OPT__( DETAIL_VXG_SCAN(DETAIL_VXG_MAP0(M, __VA_ARGS__)) )
 
 #define DETAIL_VXG_STRINGIFY(x) #x
 #define DETAIL_VXG_STRINGIFY_ARGUMENT(x) , DETAIL_VXG_STRINGIFY(x)
