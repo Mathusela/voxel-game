@@ -9,3 +9,4 @@ target_sources(modules PUBLIC
 )
 
 add_subdirectory("structs/")
+add_subdirectory("meshing/")

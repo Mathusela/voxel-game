@@ -1,10 +1,14 @@
 module;
 
+#include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <glm/glm.hpp>
 
 #include <utility>
 #include <cstdlib>
+
+#include <vector>
+#include <iostream>
 
 export module voxel_game.core:app;
 
@@ -16,45 +20,75 @@ import voxel_game.core.logic.camera;
 
 export namespace vxg::core {
 
-	template <typename Backend>
+	template <typename Context>
 	class App {
-		vxg::core::rendering::RenderingContext<Backend> m_renderingContext;
+		Context m_renderingContext;
 
 		void set_rendering_state() noexcept {
 			m_renderingContext.backend().set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
-			//m_renderingContext.backend().enable_depth_testing();
+			m_renderingContext.backend().enable_depth_testing();
 			m_renderingContext.backend().enable_multisampling();
+			m_renderingContext.backend().enable_face_culling();
 		}
 
-		void render_loop() noexcept {
+		void render_loop(std::vector<bool> voxels, decltype(m_renderingContext)::AllocationIdentifier chunk) noexcept {
 			auto resolution = m_renderingContext.window().resolution();
-			vxg::core::rendering::PerspectiveCamera camera(resolution, 45.0f, 0.1f, 200.0f);
+			// TODO: Change far plane back to something reasonable
+			vxg::core::rendering::PerspectiveCamera camera(resolution, 45.0f, 0.1f, 2000.0f);
 			camera.position = glm::vec3(0, 0.0f, 1.0f);
 			camera.update();
 
-			auto lastTime = glfwGetTime();
 			while (!m_renderingContext.window().should_close()) {
-				auto currentTime = glfwGetTime();
-				auto deltaTime = currentTime - lastTime;
-				lastTime = currentTime;
-				vxg::core::logic::camera::camera_controller(camera, m_renderingContext.window(), deltaTime);
+				m_renderingContext.update_delta_time();
+				vxg::core::logic::camera::camera_controller(camera, m_renderingContext.window(), m_renderingContext.delta_time());
+
+				if (glfwGetKey(m_renderingContext.window().get(), GLFW_KEY_F) == GLFW_PRESS) {
+					static bool wireframe = false;
+					if (!wireframe) m_renderingContext.backend().enable_wireframe();
+					else m_renderingContext.backend().disable_wireframe();
+					wireframe = !wireframe;
+				}
+
+				if (glfwGetKey(m_renderingContext.window().get(), GLFW_KEY_Q) == GLFW_PRESS) {
+					static long editing = static_cast<long>(voxels.size()-1);
+					m_renderingContext.dequeue_draw(chunk);
+					voxels[editing] = !voxels[editing];
+					editing--;
+					if (editing == -1)
+						editing = static_cast<long>(voxels.size()-1);
+					chunk = m_renderingContext.enqueue_draw_chunk(voxels, { 0.0, 0.0, 0.0 });
+				}
+				
 				m_renderingContext.draw_and_present(camera);
 			}
 		}
 
 	public:
-		App(vxg::core::rendering::RenderingContext<Backend>&& renderingContext) noexcept
+		App(Context&& renderingContext) noexcept
 			: m_renderingContext(std::move(renderingContext)) {}
 
 		vxg::ExitCode run() noexcept {
 			// TODO: Add resizing callback
 			set_rendering_state();
 
-			//[[maybe_unused]] auto test = m_renderingContext.enqueue_draw_tri({0.0, 1.0, 0.0});
-			for (int i=0; i<1'000; i++)
-				[[maybe_unused]] auto temp = m_renderingContext.enqueue_draw_tri({i%100, (i/100)%100, -i/10'000});
+			glm::vec3 chunkSize = m_renderingContext.mesher().chunkSize;
 
-			render_loop();
+			std::vector<bool> voxels(static_cast<size_t>(chunkSize.x*chunkSize.y*chunkSize.z));
+			for (size_t i = 0; i < voxels.size(); i++) {
+				voxels[i] = i%static_cast<int>(chunkSize.x) <= (i/static_cast<int>(chunkSize.y))%static_cast<int>(chunkSize.x);
+			}
+
+			size_t numVerts = 0;
+			auto initialChunk = m_renderingContext.enqueue_draw_chunk(voxels, {0.0, 0.0, 0.0});
+			numVerts += initialChunk.vertices.size;
+
+			for (int i = 1; i < 1000; i++) {
+				auto test = m_renderingContext.enqueue_draw_chunk(voxels, {(i%50)*chunkSize.x, (i/(50*50))*chunkSize.y*2, ((i/50)%50)*chunkSize.z});
+				numVerts += test.vertices.size;
+			}
+
+			render_loop(voxels, initialChunk);
+			std::cout << numVerts << "\n";
 
 			return EXIT_SUCCESS;
 		}

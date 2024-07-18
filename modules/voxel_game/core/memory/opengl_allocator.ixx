@@ -44,6 +44,7 @@ namespace vxg::core::memory {
 		GLuint tempBuffer;
 		glCreateBuffers(1, &tempBuffer);
 		vxg::utilities::DeferredFunction<decltype(glDeleteBuffers), GLsizei, GLuint*> deferredDeleteTempBuffer(glDeleteBuffers, 1, &tempBuffer);
+		// TODO: Should this use glNamedBufferStorage? Otherwise should this use GL_STATIC_READ?
 		glNamedBufferData(tempBuffer, oldSize, nullptr, GL_STATIC_COPY);
 
 		// Copy contents of buffer to temporary buffer
@@ -474,13 +475,13 @@ export namespace vxg::core::memory {
 				glCreateVertexArrays(1, &memPool.vao);
 				// Vertex buffer
 				glCreateBuffers(1, &memPool.vertex.buffer);
-				glNamedBufferData(memPool.vertex.buffer, m_vertexBufferInitialSize*sizeof(VertexType), nullptr, GL_DYNAMIC_READ);
+				glNamedBufferData(memPool.vertex.buffer, m_vertexBufferInitialSize*sizeof(VertexType), nullptr, GL_DYNAMIC_COPY);
 				// Data buffer
 				glCreateBuffers(1, &memPool.data.buffer);
-				glNamedBufferData(memPool.data.buffer, m_dataBufferInitialSize*sizeof(DataType), nullptr, GL_DYNAMIC_READ);
+				glNamedBufferData(memPool.data.buffer, m_dataBufferInitialSize*sizeof(DataType), nullptr, GL_DYNAMIC_COPY);
 				// Draw buffer
 				glCreateBuffers(1, &memPool.draw.buffer);
-				glNamedBufferData(memPool.draw.buffer, m_drawBufferInitialSize*sizeof(DrawType), nullptr, GL_DYNAMIC_READ);
+				glNamedBufferData(memPool.draw.buffer, m_drawBufferInitialSize*sizeof(DrawType), nullptr, GL_DYNAMIC_COPY);
 
 				// Free memory
 				memPool.data.freeMemory.insert(AllocationIdentifier{

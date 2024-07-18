@@ -17,6 +17,7 @@ import voxel_game.utilities;
 // TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
 // TODO: Error handling for program linking
 // TODO: Add resize callback
+// TODO: Frustrum culling
 
 // TODO: Add log levels/filtering
 // TODO: Make logging thread-safe
@@ -43,11 +44,13 @@ int main() {
 	// Construct rendering context
 	using Allocator = vxg::core::memory::OpenGLAllocator;
 	using Backend = vxg::core::rendering::OpenGLBackend<Allocator>;
-	using Context = vxg::core::rendering::RenderingContext<Backend>;
+	using Mesher = vxg::core::rendering::meshing::CulledMesher;
+	using Context = vxg::core::rendering::RenderingContext<Backend, Mesher>;
 
 	auto contextConstructionResult = vxg::exceptions::construct_and_catch<Context, std::exception>(
 		vxg::exceptions::handle_unrecoverable_error<std::exception>,
-		vxg::core::rendering::WindowProperties{ {1000, 700}, "Voxel Game", {4, 6}, 4 },
+		Mesher({ 16, 16, 16 }),
+		vxg::core::rendering::WindowProperties{ {1400, 900}, "Voxel Game", {4, 6}, 4 },
 		static_cast<uint16_t>(3),
 		static_cast<size_t>(300),
 		static_cast<size_t>(100),

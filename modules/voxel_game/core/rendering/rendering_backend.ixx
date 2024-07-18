@@ -149,10 +149,28 @@ export namespace vxg::core::rendering {
 			derived_instance()->enable_depth_testing_impl();
 		}
 
+		void enable_face_culling()
+			noexcept(noexcept(derived_instance()->enable_face_culling_impl()))
+		{
+			derived_instance()->enable_face_culling_impl();
+		}
+
 		void enable_multisampling()
 			noexcept(noexcept(derived_instance()->enable_multisampling_impl()))
 		{
 			derived_instance()->enable_multisampling_impl();
+		}
+
+		void enable_wireframe()
+			noexcept(noexcept(derived_instance()->enable_wireframe_impl()))
+		{
+			derived_instance()->enable_wireframe_impl();
+		}
+
+		void disable_wireframe()
+			noexcept(noexcept(derived_instance()->disable_wireframe_impl()))
+		{
+			derived_instance()->disable_wireframe_impl();
 		}
 	};
 

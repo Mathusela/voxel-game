@@ -103,6 +103,8 @@ export namespace vxg::core::rendering {
 		GLuint m_shaderProgram;
 		GLuint m_ubo;
 
+		bool m_depthTestingEnabled = false;
+
 		// Depends on a current window context
 		void initialize_api_impl() {
 			// Load dynamic OpenGL bindings
@@ -143,7 +145,7 @@ export namespace vxg::core::rendering {
 				"void main() {\n"
 				"    mat4 modelMatrix = mat4(modelMatrixA, modelMatrixB, modelMatrixC, modelMatrixD);\n"
 				"    vec4 worldPos = modelMatrix * vec4(vPos, 1.0);\n"
-				"    vec3 fWorldPos = worldPos.xyz;\n"
+				"    fWorldPos = worldPos.xyz;\n"
 				"    gl_Position = projectionMatrix * viewMatrix * worldPos;\n"
 				"}";
 
@@ -152,7 +154,7 @@ export namespace vxg::core::rendering {
 				"in vec3 fWorldPos;\n"
 				"out vec4 fCol;\n"
 				"void main() {\n"
-				"    fCol = vec4(1.0, 0.0, 0.0, 1.0);\n"
+				"    fCol = vec4(mod(fWorldPos.x, 1.0), mod(fWorldPos.y, 1.0), mod(fWorldPos.z, 1.0), 1.0);\n"
 				"}";
 
 			auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -176,7 +178,7 @@ export namespace vxg::core::rendering {
 
 			// Uniform buffer object
 			glCreateBuffers(1, &m_ubo);
-			glNamedBufferStorage(m_ubo, sizeof(Base::UniformType), nullptr, GL_DYNAMIC_STORAGE_BIT);
+			glNamedBufferStorage(m_ubo, sizeof(typename Base::UniformType), nullptr, GL_DYNAMIC_STORAGE_BIT);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo);
 		}
 
@@ -192,7 +194,7 @@ export namespace vxg::core::rendering {
 		}
 
 		void clear_screen_impl() const noexcept {
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(m_depthTestingEnabled ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT);
 		}
 
 		void set_clear_color_impl(const glm::vec4& color) noexcept {
@@ -242,7 +244,7 @@ export namespace vxg::core::rendering {
 		}
 
 		void update_uniforms_impl(const Base::UniformType& data) noexcept {
-			glNamedBufferSubData(m_ubo, 0, sizeof(Base::UniformType), &data);
+			glNamedBufferSubData(m_ubo, 0, sizeof(typename Base::UniformType), &data);
 		}
 
 		void configure_viewport_impl(unsigned int x, unsigned int y, unsigned int width, unsigned int height) noexcept {
@@ -251,10 +253,25 @@ export namespace vxg::core::rendering {
 
 		void enable_depth_testing_impl() noexcept {
 			glEnable(GL_DEPTH_TEST);
+			m_depthTestingEnabled = true;
+		}
+
+		void enable_face_culling_impl() noexcept {
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK);
+			glFrontFace(GL_CCW);
 		}
 
 		void enable_multisampling_impl() noexcept {
 			glEnable(GL_MULTISAMPLE);
+		}
+
+		void enable_wireframe_impl() noexcept {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+
+		void disable_wireframe_impl() noexcept {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 
 	public:
