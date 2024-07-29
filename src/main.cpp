@@ -11,40 +11,57 @@ import voxel_game.utilities;
 
 // NOTE: Module local definitions are still namespaced due to MSVC tooling limitations leading to linker errors
 
-// TODO: If doing GPU meshing and allocation without returning to CPU minimum free size (max size of chunk)
-// TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
-// TODO: Define NDEBUG for release builds
-// TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
-// TODO: Error handling for program linking
+// === TODO (high priority) ===
+// TODO: Documentation
+// TODO: Update README
+// TODO: Comprehensive error handling
+// TODO: Comprehensive logging
 // TODO: Add resize callback
+// TODO: Finish camera_controller function
+// TODO: Shader loading / embedding
+// TODO: Add chunk boundary awareness / merging in all meshing logic
+// TODO: Optimize greedy mesher
+// TODO: Voxel materials
+// TODO: Bindless textures - load all textures into VRAM for whole program lifetime (bindless avoids texture binding point limits)
+// TODO: Deferred rendering
+
+// === TODO (medium priority) ===
+// TODO: Move all the code using structs to using reflection
+// TODO: Find a way to handle different types in the allocation initialization code (e.g. Mat4)
 // TODO: Frustrum culling
 
+// === TODO (low priority) ===
+// TODO: Rename raw AllocationIdentifier struct in opengl_allocator to OpenGLAllocationIdentifier
+// TODO: Define NDEBUG for release builds
+// TODO: If doing GPU meshing and allocation without returning to CPU minimum free size (max size of chunk)
+// TODO: Error handling for program linking
+// TODO: Ensure that construction (especially data construct) in OpenGLBackend works if input struct is padded
+// TODO: Add option to update portion of UBO (e.g. may only have to update matrices)
+// TODO: Do a review of the entire codebase checking for style consistency
+// TODO: Do a review of the entire codebase checking for const correctness
+
+// === FIXME / known issues ===
+// FIXME: Doesnt draw all meshes on Intel iGPU (Test on other iGPUs?)
+// TODO: Make sure destructors don't throw if exceptions are thrown in initialization
+
+// === Logging ===
 // TODO: Add log levels/filtering
 // TODO: Make logging thread-safe
 // TODO: Flush log file during program runtime
 // TODO: Add buffer to logging
 // TODO: Multi-threaded logging
 
-// TODO: Ensure that construction (especially data construct) in OpenGLBackend works if input struct is padded
-// TODO: Add more comprehensive error handling and logging
-// TODO: Make sure destructors don't throw if exceptions are thrown in initialization
-// TODO: Could I multi-thread allocation?
-
-// TODO: Move all the code using structs to using reflection
-// TODO: Find a way to handle different types in the allocation initialization code (e.g. Mat4)
+// === Reflection ===
 // TODO: Documentation and error handling/asserts in reflection code
 // TODO: Can I add support for templated classes?
 // TODO: Enum support
 // TODO: Universal class printer
 
-// TODO: Add option to update portion of UBO (e.g. may only have to update matrices)
-// TODO: Finish camera_controller function
-
 int main() {
 	// Construct rendering context
 	using Allocator = vxg::core::memory::OpenGLAllocator;
 	using Backend = vxg::core::rendering::OpenGLBackend<Allocator>;
-	using Mesher = vxg::core::rendering::meshing::CulledMesher;
+	using Mesher = vxg::core::rendering::meshing::GreedyMesher;
 	using Context = vxg::core::rendering::RenderingContext<Backend, Mesher>;
 
 	auto contextConstructionResult = vxg::exceptions::construct_and_catch<Context, std::exception>(

@@ -154,7 +154,8 @@ export namespace vxg::core::rendering {
 				"in vec3 fWorldPos;\n"
 				"out vec4 fCol;\n"
 				"void main() {\n"
-				"    fCol = vec4(mod(fWorldPos.x, 1.0), mod(fWorldPos.y, 1.0), mod(fWorldPos.z, 1.0), 1.0);\n"
+				"    vec3 biasedWorldPos = fWorldPos - 0.0001;\n"
+				"    fCol = vec4(mod(biasedWorldPos.x, 1.0), mod(biasedWorldPos.y, 1.0), mod(biasedWorldPos.z, 1.0), 1.0);\n"
 				"}";
 
 			auto vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -237,7 +238,7 @@ export namespace vxg::core::rendering {
 			for (const auto& drawResources : m_allocator.get_draw_resources()) {
 				glBindVertexArray(drawResources.vao);
 				glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawResources.drawCommandBuffer);
-				glMultiDrawArraysIndirect(GL_TRIANGLES, 0, drawResources.drawCommandCount, 0);
+				glMultiDrawArraysIndirect(GL_TRIANGLES, nullptr, drawResources.drawCommandCount, 0);
 			}
 			glBindBuffer(GL_DRAW_INDIRECT_BUFFER, NULL);
 			glBindVertexArray(NULL);

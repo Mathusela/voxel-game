@@ -244,7 +244,7 @@ export namespace vxg::core::memory {
 			resize_buffer(bufferStorage.buffer, newSize*sizeof(ResourceEnumToType_t<resourceType>));	// Convert to bytes
 			bufferStorage.size = newSize;
 			bufferStorage.freeSize += newSize - bufferSize;
-		
+
 			return AllocationIdentifier {
 				.poolIndex = poolIndex,	// Index of the resized buffer's memory pool
 				.offset = static_cast<size_t>(bufferSize),	// Offset of the new allocation is the end of the old buffer
@@ -280,7 +280,7 @@ export namespace vxg::core::memory {
 
 				// Logging
 				vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> RESIZING VERTS: {{Memory Pool: {}}}\n", smallestMemPoolIt->index);
-
+				
 				// Merge this new free data for allocation
 				free = merge_with_surrounding_blocks(newAllocation, m_freeVertexMemory);
 			}
@@ -351,7 +351,7 @@ export namespace vxg::core::memory {
 			else {	// If there is no free memory, resize the buffer
 				// No need to merge as the free list is empty
 				free = resize_to_fit<ResourceType::Draw>(memPool.draw, 1, memPool.index);
-				
+
 				// Logging
 				vxg::logging::std_debug_log().log(vxg::logging::LogType::Info, "<OpenGL Allocator> RESIZING DRAW: {{Memory Pool: {}}}\n", memPool.index);
 			}
@@ -457,14 +457,6 @@ export namespace vxg::core::memory {
 
 		// Assumes a valid OpenGL context is current
 		void initialize_impl() noexcept {
-			// Initialize allocator global resources
-			m_freeVertexMemory.insert(AllocationIdentifier{
-				.poolIndex = 0,
-				.offset = 0,
-				.size = m_vertexBufferInitialSize,
-				.type = ResourceType::Vertex
-				});
-
 			// Initialize memory pools
 			for (uint16_t i = 0; i < m_numMemoryPools; i++) {
 				m_memoryPools.push_back({});
@@ -489,13 +481,19 @@ export namespace vxg::core::memory {
 					.offset = 0,
 					.size = m_dataBufferInitialSize,
 					.type = ResourceType::Data
-					});
+				});
 				memPool.draw.freeMemory.insert(AllocationIdentifier{
 					.poolIndex = static_cast<uint16_t>(i),
 					.offset = 0,
 					.size = m_drawBufferInitialSize,
 					.type = ResourceType::Draw
-					});
+				});
+				m_freeVertexMemory.insert(AllocationIdentifier{
+					.poolIndex = static_cast<uint16_t>(i),
+					.offset = 0,
+					.size = m_vertexBufferInitialSize,
+					.type = ResourceType::Vertex
+				});
 
 				// Initialize metadata
 				memPool.index = i;

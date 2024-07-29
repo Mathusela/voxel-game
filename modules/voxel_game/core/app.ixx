@@ -28,10 +28,11 @@ export namespace vxg::core {
 			m_renderingContext.backend().set_clear_color(glm::vec4(0.0, 0.0, 0.0, 1.0));
 			m_renderingContext.backend().enable_depth_testing();
 			m_renderingContext.backend().enable_multisampling();
-			m_renderingContext.backend().enable_face_culling();
+			// Cannot use face culling with greedy mesher since some faces may need to be viewed from both sides
+			// m_renderingContext.backend().enable_face_culling();
 		}
 
-		void render_loop(std::vector<bool> voxels, decltype(m_renderingContext)::AllocationIdentifier chunk) noexcept {
+		void render_loop(std::vector<bool> voxels, [[maybe_unused]] decltype(m_renderingContext)::AllocationIdentifier chunk) noexcept {
 			auto resolution = m_renderingContext.window().resolution();
 			// TODO: Change far plane back to something reasonable
 			vxg::core::rendering::PerspectiveCamera camera(resolution, 45.0f, 0.1f, 2000.0f);
@@ -48,7 +49,7 @@ export namespace vxg::core {
 					else m_renderingContext.backend().disable_wireframe();
 					wireframe = !wireframe;
 				}
-
+				
 				if (glfwGetKey(m_renderingContext.window().get(), GLFW_KEY_Q) == GLFW_PRESS) {
 					static long editing = static_cast<long>(voxels.size()-1);
 					m_renderingContext.dequeue_draw(chunk);
@@ -75,15 +76,16 @@ export namespace vxg::core {
 
 			std::vector<bool> voxels(static_cast<size_t>(chunkSize.x*chunkSize.y*chunkSize.z));
 			for (size_t i = 0; i < voxels.size(); i++) {
-				voxels[i] = i%static_cast<int>(chunkSize.x) <= (i/static_cast<int>(chunkSize.y))%static_cast<int>(chunkSize.x);
+				//voxels[i] = i%static_cast<int>(chunkSize.x) <= (i/static_cast<int>(chunkSize.y))%static_cast<int>(chunkSize.x);
+				voxels[i] = true;
 			}
 
 			size_t numVerts = 0;
 			auto initialChunk = m_renderingContext.enqueue_draw_chunk(voxels, {0.0, 0.0, 0.0});
 			numVerts += initialChunk.vertices.size;
-
+			
 			for (int i = 1; i < 1000; i++) {
-				auto test = m_renderingContext.enqueue_draw_chunk(voxels, {(i%50)*chunkSize.x, (i/(50*50))*chunkSize.y*2, ((i/50)%50)*chunkSize.z});
+				auto test = m_renderingContext.enqueue_draw_chunk(voxels, {(i%150)*chunkSize.x, (i/(150*150))*chunkSize.y*2, ((i/150)%150)*chunkSize.z});
 				numVerts += test.vertices.size;
 			}
 
