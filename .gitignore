@@ -19,3 +19,6 @@ out/
 # Dev files
 *.pdb
 .*/
+
+# Doxygen output directory
+docs-generated/
