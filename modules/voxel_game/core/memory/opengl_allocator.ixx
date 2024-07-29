@@ -14,7 +14,6 @@ module;
 #include <iterator>
 #include <ranges>
 #include <cassert>
-#include <iostream>
 
 export module voxel_game.core.memory:opengl_allocator;
 
@@ -29,9 +28,9 @@ import voxel_game.reflection;
 namespace vxg::core::memory {
 
 	/**
-	 * @brief Resize an OpenGL buffer retaining its contents
-	 * @param buffer Buffer to resize
-	 * @param newSize New size of the buffer in bytes
+	 * @brief Resize an OpenGL buffer retaining its contents.
+	 * @param buffer Buffer to resize.
+	 * @param newSize New size of the buffer in bytes.
 	 */
 	void resize_buffer(GLuint buffer, GLsizeiptr newSize) {
 		// Get current size of buffer and usage hint for the data
@@ -58,19 +57,33 @@ namespace vxg::core::memory {
 		glCopyNamedBufferSubData(tempBuffer, buffer, 0, 0, copySize);
 	}
 
+	/**
+	 * @brief Type of data held in an allocation block.
+	 */
 	enum class ResourceType {
 		Vertex,
 		Data,
 		Draw
 	};
 
+	
+	// TODO: Rename to OpenGLAllocationIdentifier
+	/**
+	 * @brief Identifier for memory allocated by OpenGLAllocator.
+	 */
 	struct AllocationIdentifier {
-		std::uint16_t poolIndex;	// Index of the owning memory pool
-		size_t offset;	// Offset into the buffer in multiples of the sizeof the resource type
-		size_t size;	// Size of the allocation in multiples of sizeof the resource type
-		ResourceType type;	// Type of resource allocated
+		std::uint16_t poolIndex;	//!< Index of the owning memory pool.
+		size_t offset;	//!< Offset into the buffer in multiples of the sizeof the resource type.
+		size_t size;	//!< Size of the allocation in multiples of sizeof the resource type.
+		ResourceType type;	//!< Type of resource allocated.
 	};
 
+	/**
+	 * @brief Get an allocation block representing the remaining free memory after an allocation to the start of a free block.
+	 * @param freeMemory Free block which has been allocated to.
+	 * @param size Size of the allocation.
+	 * @return Allocation block representing the remaining free memory.
+	 */
 	AllocationIdentifier get_remaining_free_memory(const AllocationIdentifier& freeMemory, size_t size) {
 		return AllocationIdentifier{
 			.poolIndex = freeMemory.poolIndex,
@@ -82,7 +95,11 @@ namespace vxg::core::memory {
 
 };	// namespace vxg::core::memory
 
-// Order allocation identifiers by memory location for efficient merging of blocks
+/**
+ * @brief Order allocation identifiers by memory location.
+ * 
+ * This is used to efficiently merge blocks of memory in free lists in vxg::core::memory::OpenGLAllocator.
+ */
 template <>
 struct std::less<vxg::core::memory::AllocationIdentifier> {
 	constexpr bool operator()
@@ -93,11 +110,12 @@ struct std::less<vxg::core::memory::AllocationIdentifier> {
 };
 
 namespace vxg::core::memory {
+
 	/**
-	 * @brief If possible merge an allocation block with surrounding blocks from a free list, removing the surrounding blocks from the list
-	 * @param block The block to merge
-	 * @param freeList The free list to merge with
-	 * @return The resulting merged block
+	 * @brief If possible merge an allocation block with surrounding blocks from a free list, removing the surrounding blocks from the list.
+	 * @param block The block to merge.
+	 * @param freeList The free list to merge with.
+	 * @return The resulting merged block.
 	 */
 	[[nodiscard]]
 	AllocationIdentifier merge_with_surrounding_blocks(const AllocationIdentifier& block, std::set<AllocationIdentifier>& freeList) {
@@ -140,17 +158,34 @@ namespace vxg::core::memory {
 
 		return merged;
 	}
-
+	
+	/**
+	 * @brief Storage and metadata for an OpenGL allocation buffer.
+	 * 
+	 * Used with external free memory tracking when free memory is tracked between multiple buffers.
+	 * 
+	 * @see MemoryPoolLocalBufferStorage
+	 */
 	struct BufferStorage {
 		GLuint buffer;
-		GLsizeiptr size;	// Size of the buffer in multiples of sizeof the resource type
-		GLsizeiptr freeSize;	// Free space in the buffer in multiples of sizeof the resource type
+		GLsizeiptr size;	//!< Size of the buffer in multiples of sizeof the resource type.
+		GLsizeiptr freeSize;	//!< Free space in the buffer in multiples of sizeof the resource type.
 	};
 
+	/**
+	 * @brief Storage and metadata for an OpenGL allocation buffer with local free memory tracking.
+	 * 
+	 * Used when free memory is tracked on a per-buffer basis.
+	 * 
+	 * @see BufferStorage
+	 */
 	struct MemoryPoolLocalBufferStorage : public BufferStorage {
 		std::set<AllocationIdentifier> freeMemory;
 	};
 
+	/**
+	 * @brief Unit of memory resources for OpenGLAllocator.
+	 */
 	struct MemoryPool {
 		// Resources
 		GLuint vao;
@@ -159,8 +194,8 @@ namespace vxg::core::memory {
 		MemoryPoolLocalBufferStorage draw;
 		
 		// Metadata
-		uint16_t index;	// Index of the memory pool in the allocator's memory pool list
-		GLsizei storedDrawCommands;	// Number of draw commands stored in the draw buffer
+		uint16_t index;	//!< Index of the memory pool in the allocator's memory pool list.
+		GLsizei storedDrawCommands;	//!< Number of draw commands stored in the draw buffer.
 	};
 
 };	// namespace vxg::core::memory
@@ -168,6 +203,10 @@ namespace vxg::core::memory {
 // EXPORTED
 export namespace vxg::core::memory {
 
+	/**
+	 * @brief ExposedDrawResourcesType of OpenGLAllocator.
+	 * @see GpuAllocatorTraits<OpenGLAllocator>
+	 */
 	struct OpenGLDrawResources {
 		GLuint vao;
 		GLuint drawCommandBuffer;
@@ -175,6 +214,8 @@ export namespace vxg::core::memory {
 	};
 
 	class OpenGLAllocator;
+	//! @see GpuAllocatorTraits
+	//! @see OpenGLAllocator
 	template <>
 	struct GpuAllocatorTraits<OpenGLAllocator> {
 		using VertexType = vxg::core::structs::Vertex;
@@ -188,6 +229,10 @@ export namespace vxg::core::memory {
 
 namespace vxg::core::memory {
 
+	/**
+	 * @brief Convert a ResourceType enum to it's corresponding type.
+	 * @tparam resourceEnum Enum to convert.
+	 */
 	template <ResourceType resourceEnum>
 	struct ResourceEnumToType {};
 	template <>
@@ -202,6 +247,7 @@ namespace vxg::core::memory {
 	struct ResourceEnumToType<ResourceType::Draw> {
 		using Type = GpuAllocatorTraits<OpenGLAllocator>::DrawType;
 	};
+	//! @copydoc ResourceEnumToType
 	template <ResourceType resourceEnum>
 	using ResourceEnumToType_t = typename ResourceEnumToType<resourceEnum>::Type;
 
@@ -210,6 +256,19 @@ namespace vxg::core::memory {
 // EXPORTED
 export namespace vxg::core::memory {
 
+	/**
+	 * @brief GPUAllocator implementation for OpenGL.
+	 * 
+	 * Manages multiple memory pools for vertex, data, and draw resources, utilizing an exponential growth strategy for resizing buffers with a growth factor of 2.
+	 * 
+	 * Draw and data resources are allocated to the same memory pool as the associated vertex resources.
+	 * Deallocated memory is merged with adjacent free memory blocks to reduce fragmentation and allow reuse of memory.
+	 * 
+	 * A GpuAllocatorTraits specialization is provided.
+	 * 
+	 * @see GpuAllocator
+	 * @see GpuAllocatorTraits<OpenGLAllocator>
+	 */
 	class OpenGLAllocator final : public GpuAllocator<OpenGLAllocator> {
 		using Base = GpuAllocator<OpenGLAllocator>;
 		friend Base;
@@ -223,12 +282,12 @@ export namespace vxg::core::memory {
 		std::set<AllocationIdentifier> m_freeVertexMemory;
 
 		/**
-		 * @brief Resize a buffer such that it can contain the required number of elements of the specified resource type
-		 * @tparam resourceType The underlying resource type of the buffer
-		 * @param bufferStorage The buffer storage containing the buffer to resize
-		 * @param requiredSize The number of elements required
-		 * @param poolIndex The index of the memory pool the buffer belongs to
-		 * @return The allocation identifier of the new memory due to resizing
+		 * @brief Resize a buffer such that it can contain the required number of elements of the specified resource type.
+		 * @tparam resourceType The underlying resource type of the buffer.
+		 * @param bufferStorage The buffer storage containing the buffer to resize.
+		 * @param requiredSize The number of elements required.
+		 * @param poolIndex The index of the memory pool the buffer belongs to.
+		 * @return The allocation identifier of the new memory due to resizing.
 		 */
 		template <ResourceType resourceType>
 		[[nodiscard]]
@@ -543,6 +602,7 @@ export namespace vxg::core::memory {
 			}
 		}
 
+		[[nodiscard]]
 		std::vector<ExposedDrawResourcesType> get_draw_resources_impl() const noexcept {
 			std::vector<ExposedDrawResourcesType> drawResources;
 			for (auto& memPool : m_memoryPools)
@@ -560,21 +620,17 @@ export namespace vxg::core::memory {
 		OpenGLAllocator(const uint16_t numMemoryPools, const size_t vertexBufferInitialSize, const size_t dataBufferInitialSize, const size_t drawBufferInitialSize)
 			: Base(), m_numMemoryPools(numMemoryPools), m_vertexBufferInitialSize(vertexBufferInitialSize), m_dataBufferInitialSize(dataBufferInitialSize), m_drawBufferInitialSize(drawBufferInitialSize) {}
 	
-		// Copy constructor
+		// Not copyable
 		OpenGLAllocator(const OpenGLAllocator& oa) = delete;
-
-		// Copy assignment
 		OpenGLAllocator& operator=(const OpenGLAllocator& oa) = delete;
 
-		// Move constructor
+		// Move constructable only
 		OpenGLAllocator(OpenGLAllocator&& oa) noexcept
 			: Base(std::move(oa)), m_numMemoryPools(oa.m_numMemoryPools), m_vertexBufferInitialSize(oa.m_vertexBufferInitialSize), m_dataBufferInitialSize(oa.m_dataBufferInitialSize), m_drawBufferInitialSize(oa.m_drawBufferInitialSize)
 		{
 			m_memoryPools = std::move(oa.m_memoryPools);
 			m_freeVertexMemory = std::move(oa.m_freeVertexMemory);
 		}
-
-		// Move assignment
 		OpenGLAllocator& operator=(OpenGLAllocator&& oa) = delete;
 
 		~OpenGLAllocator() noexcept = default;

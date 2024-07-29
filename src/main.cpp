@@ -3,8 +3,6 @@
 #include <cstdint>
 #include <string_view>
 
-#include <iostream>
-
 import voxel_game.core;
 import voxel_game.exceptions;
 import voxel_game.utilities;
@@ -13,6 +11,20 @@ import voxel_game.utilities;
 
 // === TODO (high priority) ===
 // TODO: Documentation
+	// Document include directory
+	// Document modules directory
+		// Core
+			// ~~Logic~~
+			// ~~Memory~~
+			// Rendering
+			// Structs
+		// Exceptions
+		// Logging
+		// Reflection
+		// Typedefs
+		// Utilities
+			// Memory
+			// TMP
 // TODO: Update README
 // TODO: Comprehensive error handling
 // TODO: Comprehensive logging

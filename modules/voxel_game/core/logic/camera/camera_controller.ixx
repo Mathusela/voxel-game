@@ -6,22 +6,28 @@ module;
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-
 export module voxel_game.core.logic.camera:camera_controller;
 
 import voxel_game.core.rendering;
 
 export namespace vxg::core::logic::camera {
 
-	// TODO: FINISH THIS
+	/**
+	 * @brief Update a camera's transform based on user input.
+	 * @param camera Camera to update.
+	 * @param window Window to poll input from.
+	 * @param deltaTime Time elapsed since previous frame.
+	 */
 	void camera_controller(vxg::core::rendering::Camera& camera, const vxg::core::rendering::WindowManager& window, double deltaTime) noexcept {
+		// TODO: FINISH THIS
 		float cameraMovementSpeed = 3.0f * static_cast<float>(deltaTime);
 		float cameraRotationSpeed = 90.0f * static_cast<float>(deltaTime);
 
+		// Sprint
 		if (glfwGetKey(window.get(), GLFW_KEY_LEFT_CONTROL))
 			cameraMovementSpeed *= 10.0f;
 
+		// Translation
 		auto offset = glm::vec3(0.0);
 		if (glfwGetKey(window.get(), GLFW_KEY_W))
 			offset += glm::vec3(0.0, 0.0, -1.0);
@@ -36,6 +42,7 @@ export namespace vxg::core::logic::camera {
 		if (glfwGetKey(window.get(), GLFW_KEY_LEFT_SHIFT))
 			offset += glm::vec3(0.0, -1.0, 0.0);
 
+		// Rotation
 		if (glfwGetKey(window.get(), GLFW_KEY_LEFT))
 			camera.rotation *= glm::angleAxis(glm::radians(-cameraRotationSpeed), glm::vec3(0.0, 1.0, 0.0));
 		if (glfwGetKey(window.get(), GLFW_KEY_RIGHT))
@@ -48,6 +55,7 @@ export namespace vxg::core::logic::camera {
 		if (glfwGetKey(window.get(), GLFW_KEY_DOWN))
 			camera.rotation *= glm::angleAxis(glm::radians(-cameraRotationSpeed), right);
 
+		// Update camera
 		if (glm::length(offset) != 0)
 			offset = glm::normalize(offset);
 
